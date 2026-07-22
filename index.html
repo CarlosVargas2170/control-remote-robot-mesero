@@ -3,175 +3,185 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0f0f23">
-  <title>Control Robot - Mini App QR</title>
-  <link rel="stylesheet" href="style.css?v=2">
+  <meta name="theme-color" content="#0d1117">
+  <title>Control Mesero Robot</title>
+  <link rel="stylesheet" href="style.css?v=9">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
   <div class="app">
-    <!-- HEADER -->
+
+    <!-- ═══ HEADER + CONEXIÓN ═══ -->
     <header class="header">
-      <div class="header-top">
-        <h1>🤖 Control Robot Mesero</h1>
-        <div class="connection-status" id="connStatus">
+      <div class="header-row">
+        <div class="header-left">
+          <span class="header-logo">🤖</span>
+          <h1>Mesero Robot</h1>
+        </div>
+        <div class="conn-badge" id="connStatus">
           <span class="dot" id="connDot"></span>
-          <span id="connText">Sin conexión</span>
+          <span id="connText">Offline</span>
         </div>
       </div>
-      <div class="config-bar">
-        <label for="baseUrl">URL del Totem:</label>
-        <input type="text" id="baseUrl" placeholder="http://IP_DEL_TOTEM:8080" value="">
-        <button class="btn-small btn-test" onclick="testConnection()">Probar</button>
-      </div>
-      <div class="hint">
-        <small>Escribe la IP de la Jetson (ej: <code>http://192.168.1.50:8080</code>) o tu URL de ngrok.</small>
+
+      <div class="url-bar">
+        <div class="url-input-wrap">
+          <span class="url-icon">🔌</span>
+          <input type="text" id="baseUrl" placeholder="http://IP_DEL_ROBOT:8080" value="http://192.168.21.71:5050">
+        </div>
+        <button class="btn-connect" onclick="testConnection()">Conectar</button>
       </div>
     </header>
 
-    <!-- LOGS -->
-    <div class="log-panel" id="logPanel">
-      <div class="log-header">
-        <span>Consola</span>
-        <button class="btn-clear" onclick="clearLogs()">Limpiar</button>
-      </div>
-      <div class="log-body" id="logBody"></div>
+    <!-- ═══ BADGE DE AUDIO ACTIVO ═══ -->
+    <div class="audio-live-badge" id="audioLiveBadge" style="display:none">
+      <span class="audio-live-dot"></span>
+      <span class="audio-live-icon">🔊</span>
+      <span class="audio-live-text" id="audioLiveText"></span>
     </div>
 
-    <!-- CONTROLES -->
-    <main class="controls">
+    <!-- ═══ SPLIT LAYOUT: CONTROLES + CONSOLA ═══ -->
+    <main class="split-layout">
 
-      <!-- PROXIMIDAD -->
-      <section class="panel">
-        <h2>📡 Proximidad</h2>
-        <div class="btn-grid">
-          <button class="btn btn-blue" onclick="callEndpoint('POST','/proximity/near')">
-            <span class="icon">👋</span>
-            <span class="label">Cerca</span>
-            <span class="sub">Mostrar video</span>
-          </button>
-          <button class="btn btn-gray" onclick="callEndpoint('POST','/proximity/away')">
-            <span class="icon">🚶</span>
-            <span class="label">Lejos</span>
-            <span class="sub">Volver a reposo</span>
-          </button>
-        </div>
-      </section>
+      <!-- ─── Panel izquierdo: Controles (scrollable) ─── -->
+      <div class="controls-panel">
 
-      <!-- PANTALLA -->
-      <section class="panel">
-        <h2>🖥️ Pantalla</h2>
-        <div class="btn-grid">
-          <button class="btn btn-green" onclick="callEndpoint('POST','/greet')">
-            <span class="icon">🗣️</span>
-            <span class="label">Saludar</span>
-            <span class="sub">Producto + audio</span>
-          </button>
-          <button class="btn btn-yellow" onclick="callEndpoint('POST','/product')">
-            <span class="icon">🖼️</span>
-            <span class="label">Solo Producto</span>
-            <span class="sub">Sin audio</span>
-          </button>
-          <button class="btn btn-red" onclick="callEndpoint('POST','/cancel-payment')">
-            <span class="icon">✖️</span>
-            <span class="label">Cancelar Pago</span>
-            <span class="sub">Volver al producto</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- AUDIO -->
-      <section class="panel">
-        <h2>🔊 Audio</h2>
-        <div class="btn-grid">
-          <button class="btn btn-purple" onclick="callEndpoint('POST','/play-question')">
-            <span class="icon">❓</span>
-            <span class="label">Pregunta</span>
-            <span class="sub">¿Deseas un cafe?</span>
-          </button>
-          <button class="btn btn-purple" onclick="callEndpoint('POST','/play-thanks')">
-            <span class="icon">🙏</span>
-            <span class="label">Gracias</span>
-            <span class="sub">Agradecimiento</span>
-          </button>
-          <button class="btn btn-orange" onclick="callEndpoint('POST','/play-buy')">
-            <span class="icon">🛒</span>
-            <span class="label">Comprar</span>
-            <span class="sub">Invitacion a compra</span>
-          </button>
-          <button class="btn btn-teal" onclick="callEndpoint('POST','/play-order')">
-            <span class="icon">🔔</span>
-            <span class="label">Orden</span>
-            <span class="sub">Nueva orden recibida</span>
-          </button>
-          <button class="btn btn-yellow" onclick="callEndpoint('POST','/play-attention')">
-            <span class="icon">⚠️</span>
-            <span class="label">Atencion</span>
-            <span class="sub">Disculpa, atencion</span>
-          </button>
-          <button class="btn btn-blue" onclick="callEndpoint('POST','/play-collect-tray')">
-            <span class="icon">🍽️</span>
-            <span class="label">Bandeja</span>
-            <span class="sub">Cobrar bandeja</span>
-          </button>
-          <button class="btn btn-purple" onclick="callEndpoint('POST','/play-coffee')">
-            <span class="icon">☕</span>
-            <span class="label">Cafe</span>
-            <span class="sub">Aqui esta tu cafe</span>
-          </button>
-          <button class="btn btn-red" onclick="callEndpoint('POST','/audio/stop')">
-            <span class="icon">🔇</span>
-            <span class="label">Detener</span>
-            <span class="sub">Parar audio</span>
-          </button>
-        </div>
-
-        <!-- Audio personalizado -->
-        <div class="form-block">
-          <h3>Reproducir audio personalizado</h3>
-          <div class="form-row">
-            <input type="text" id="customAsset" placeholder="Ruta del asset (ej: audio/alerta.wav)" value="audio/question_coffe_old2.wav">
-            <input type="number" id="customVolume" placeholder="Volumen" min="0" max="1" step="0.1" value="1.0" style="width:80px">
+        <!-- ─── Control ─── -->
+        <section class="block">
+          <div class="block-header">
+            <span class="block-icon">📡</span>
+            <span class="block-title">Detección</span>
           </div>
-          <label class="checkbox">
-            <input type="checkbox" id="customForce"> Forzar (ignorar cooldown)
-          </label>
-          <button class="btn btn-purple btn-full" onclick="playCustomAudio()">
-            <span class="icon">▶️</span> Reproducir
-          </button>
-        </div>
-      </section>
+          <div class="action-grid">
+            <button class="action-card" onclick="callEndpoint('POST','/proximity/near')">
+              <span class="action-card-icon">👋</span>
+              <span class="action-card-label">Cerca</span>
+              <span class="action-card-sub">Modo interactivo</span>
+            </button>
+            <button class="action-card" onclick="callEndpoint('POST','/proximity/away')">
+              <span class="action-card-icon">🚶</span>
+              <span class="action-card-label">Lejos</span>
+              <span class="action-card-sub">Volver a reposo</span>
+            </button>
+          </div>
+        </section>
 
-      <!-- CONFIG -->
-      <section class="panel">
-        <h2>⚙️ Configuracion</h2>
-        <button class="btn btn-teal btn-full" onclick="callEndpoint('GET','/config')">
-          <span class="icon">📋</span> Ver configuracion actual
-        </button>
+        <section class="block">
+          <div class="block-header">
+            <span class="block-icon">🖥️</span>
+            <span class="block-title">Pantalla</span>
+          </div>
+          <div class="action-grid">
+            <button class="action-card accent" data-audio="/greet">
+              <span class="action-card-icon">🗣️</span>
+              <span class="action-card-label">Saludar</span>
+              <span class="action-card-sub">Producto + audio</span>
+            </button>
+            <button class="action-card" onclick="callEndpoint('POST','/product')">
+              <span class="action-card-icon">🖼️</span>
+              <span class="action-card-label">Producto</span>
+              <span class="action-card-sub">Solo imagen</span>
+            </button>
+            <button class="action-card danger" onclick="callEndpoint('POST','/cancel-payment')">
+              <span class="action-card-icon">✖️</span>
+              <span class="action-card-label">Cancelar</span>
+              <span class="action-card-sub">Cancelar pago</span>
+            </button>
+          </div>
+        </section>
 
-        <div class="form-block">
-          <h3>Actualizar configuracion</h3>
-          <div class="form-row">
-            <input type="text" id="cfgBaseUrl" placeholder="Base URL">
+        <!-- ─── Audios ─── -->
+        <section class="block">
+          <div class="block-header">
+            <span class="block-icon">🔊</span>
+            <span class="block-title">Audios</span>
+          </div>
+          <div class="action-grid cols-3">
+            <button class="action-card" data-audio="/play-question">
+              <span class="action-card-icon">❓</span>
+              <span class="action-card-label">¿Hola, deseas un café?</span>
+            </button>
+            <button class="action-card" data-audio="/play-thanks">
+              <span class="action-card-icon">🙏</span>
+              <span class="action-card-label">Gracias por tu compra, enseguida te lo traigo</span>
+            </button>
+            <button class="action-card" data-audio="/play-buy">
+              <span class="action-card-icon">🛒</span>
+              <span class="action-card-label">Si compras un café, te lo traigo enseguida</span>
+            </button>
+            <button class="action-card" data-audio="/play-order">
+              <span class="action-card-icon">🔔</span>
+              <span class="action-card-label">Tengo un pedido, ¿Lo puedes revisar?, son los que dicen Robot Mesero</span>
+            </button>
+            <button class="action-card" data-audio="/play-attention">
+              <span class="action-card-icon">⚠️</span>
+              <span class="action-card-label">Atención, con permiso con favor</span>
+            </button>
+            <button class="action-card" data-audio="/play-collect-tray">
+              <span class="action-card-icon">🍽️</span>
+              <span class="action-card-label">¿Hola, puedo recoger tu bandeja?</span>
+            </button>
+            <button class="action-card" data-audio="/play-coffee">
+              <span class="action-card-icon">☕</span>
+              <span class="action-card-label">¡Aquí tienes tu café, que lo disfrutes!</span>
+            </button>
+            <button class="action-card danger" onclick="stopLocal(); callEndpoint('POST','/audio/stop')">
+              <span class="action-card-icon">🔇</span>
+              <span class="action-card-label">Detener</span>
+            </button>
+          </div>
+
+          <div class="audio-custom">
+            <div class="audio-custom-row">
+              <input type="text" id="customAsset" placeholder="Ruta del audio (ej: audio/alerta.wav)" value="audio/question_coffe_old2.wav">
+            </div>
+            <div class="audio-custom-row split">
+              <input type="number" id="customVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
+              <label class="toggle-label">
+                <input type="checkbox" id="customForce"> Forzar
+              </label>
+              <button class="btn-play" onclick="playCustomAudio()">▶️</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ─── Configuración ─── -->
+        <section class="block">
+          <div class="block-header">
+            <span class="block-icon">⚙️</span>
+            <span class="block-title">Configuración</span>
+          </div>
+          <div class="config-card">
+            <button class="btn-outline" onclick="callEndpoint('GET','/config')">📋 Ver config actual</button>
+            <input type="text" id="cfgBaseUrl" placeholder="Base URL del API">
             <input type="text" id="cfgToken" placeholder="Bearer Token">
+            <div class="config-row">
+              <input type="number" id="cfgMerchantId" placeholder="Merchant ID">
+              <input type="number" id="cfgProductId" placeholder="Product ID">
+            </div>
+            <button class="btn-accent" onclick="updateConfig()">💾 Guardar configuración</button>
           </div>
-          <div class="form-row">
-            <input type="number" id="cfgMerchantId" placeholder="Merchant ID" style="width:48%">
-            <input type="number" id="cfgProductId" placeholder="Product ID" style="width:48%">
+        </section>
+
+      </div>
+
+      <!-- ─── Panel derecho: Consola (fija, siempre visible) ─── -->
+      <div class="console-panel">
+        <div class="console-header">
+          <div class="console-header-left">
+            <span class="block-icon">📟</span>
+            <span class="block-title">Consola</span>
           </div>
-          <button class="btn btn-teal btn-full" onclick="updateConfig()">
-            <span class="icon">💾</span> Guardar configuracion
-          </button>
+          <button class="btn-clear" onclick="clearLogs()">Limpiar</button>
         </div>
-      </section>
+        <div class="log-box" id="logBody"></div>
+      </div>
 
     </main>
 
-    <footer class="footer">
-      Mini App QR - Panel de Control Remoto
-    </footer>
+    <footer class="footer">Control Remoto · Mesero Robot</footer>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
