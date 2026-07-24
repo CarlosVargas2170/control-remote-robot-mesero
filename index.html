@@ -91,7 +91,7 @@
         </section>
 
         <!-- ─── Audios ─── -->
-        <!-- <section class="block">
+        <section class="block">
           <div class="block-header">
             <span class="block-icon">🔊</span>
             <span class="block-title">Audios</span>
@@ -125,6 +125,11 @@
               <span class="action-card-icon">☕</span>
               <span class="action-card-label">¡Aquí tienes tu café, que lo disfrutes!</span>
             </button>
+            <button class="action-card" onclick="quickPlay('audio/Muchas_graacias.wav', 'audio/Muchas graacias.wav')">
+              <span class="action-card-icon">🙏</span>
+              <span class="action-card-label">Gracias</span>
+              <span class="action-card-sub">Muchas gracias</span>
+            </button>
             <button class="action-card danger" onclick="stopLocal(); callEndpoint('POST','/audio/stop')">
               <span class="action-card-icon">🔇</span>
               <span class="action-card-label">Detener</span>
@@ -143,9 +148,10 @@
               <button class="btn-play" onclick="playCustomAudio()">▶️</button>
             </div>
           </div>
-        </section> -->
+        </section>
 
-        <section class="block">
+        <!-- kIKY -->
+        <!-- <section class="block">
           <div class="block-header">
             <span class="block-icon">🔊</span>
             <span class="block-title">Audios Kíky</span>
@@ -190,7 +196,7 @@
               <button class="btn-play danger" onclick="stopLocal(); callEndpoint('POST','/audio/stop')" style="background:#f85149">⏹</button>
             </div>
           </div>
-        </section>
+        </section> -->
 
         <!-- ─── Configuración ─── -->
         <section class="block">
