@@ -27,6 +27,11 @@ const AUDIO_LABELS = {
   'attention_excuse_me.wav': 'Atención, disculpe',
   'collect_tray.wav':        'Cobrar bandeja',
   'here_is_coffee.wav':      '¡Aquí está tu café!',
+  // Kíky audios
+  'Aqui_tienes_Que_lo_d.wav':    'Aquí tienes. ¡Que lo disfrutes!',
+  'Hola_deseas_un_Brown.wav':    'Hola, ¿deseas un Brownie de Kíky?',
+  'Hola_deseas_un_Cremo.wav':    'Hola, ¿deseas un Cremoso 3 Leches?',
+  'Muchas_graacias.wav':         'Muchas gracias',
 };
 
 // ── Helpers ──
@@ -187,11 +192,14 @@ async function callEndpoint(method, path, body = null, localAudioFile = null) {
 }
 
 async function testConnection() {
-  log('Probando conexión...', 'info');
+  log('Probando conexion...', 'info');
   const result = await callEndpoint('GET', '/config');
   if (result.ok) {
     const cfg = result.data?.data || {};
-    log(`¡Conectado! Merchant=${cfg.merchantId}, Product=${cfg.productId}`, 'ok');
+    const merchants = cfg.merchantIds || [];
+    log(`Conectado! Merchants=${merchants.join(',')}, Product=${cfg.productId}`, 'ok');
+    // Cargar productos automaticamente tras conectar
+    loadMerchantsAndProducts();
   }
 }
 
@@ -209,6 +217,26 @@ function bindAudioButtons() {
 }
 
 // ── Audio custom ──
+
+/** Reproduce un audio con un solo click: local + robot en paralelo.
+ *  @param {string} assetPath - Ruta del asset en el robot (ej: 'audio/kiky/...')
+ *  @param {string} localPath - Ruta del archivo local (ej: 'audio/kiky/...')
+ */
+async function quickPlay(assetPath, localPath) {
+  // Reproducir localmente
+  playLocal(localPath);
+
+  // Enviar al robot
+  const result = await callEndpoint('POST', '/audio/play', {
+    asset: assetPath,
+    volume: 1.0,
+    force: false,
+  });
+
+  if (!result.ok) {
+    log('⚠️ Robot no reprodujo. Sonando solo local.', 'warn');
+  }
+}
 
 async function playCustomAudio() {
   const asset = document.getElementById('customAsset').value.trim();
@@ -242,12 +270,17 @@ async function updateConfig() {
   const body = {};
   const baseUrl = document.getElementById('cfgBaseUrl').value.trim();
   const token = document.getElementById('cfgToken').value.trim();
-  const merchantId = document.getElementById('cfgMerchantId').value;
+  const merchantIdsRaw = document.getElementById('cfgMerchantIds').value.trim();
   const productId = document.getElementById('cfgProductId').value;
 
   if (baseUrl) body.baseUrl = baseUrl;
   if (token) body.bearerToken = token;
-  if (merchantId) body.merchantId = parseInt(merchantId);
+
+  // Parsear merchantIds: "1,53,55" → [1, 53, 55]
+  if (merchantIdsRaw) {
+    const ids = merchantIdsRaw.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+    if (ids.length > 0) body.merchantIds = ids;
+  }
   if (productId) body.productId = parseInt(productId);
 
   if (Object.keys(body).length === 0) {
@@ -257,11 +290,317 @@ async function updateConfig() {
 
   const result = await callEndpoint('POST', '/config', body);
   if (result.ok) {
-    log('Configuración guardada. Reinicia la app para aplicar.', 'ok');
+    log('Configuracion guardada. Recargando productos...', 'ok');
+    loadMerchantsAndProducts();
   }
 }
 
-// ── Init ──
+// ── Merchants & Products ──
+
+/** Cache local del estado de productos cargado desde el backend. */
+let _productState = null;
+/** Modo de filtro actual. */
+let _currentFilterMode = 'all';
+/** Indica si hay una operacion de toggle en progreso. */
+let _isToggling = false;
+
+/**
+ * Carga la lista de productos desde GET /products y renderiza la UI.
+ */
+async function loadMerchantsAndProducts() {
+  const result = await callEndpoint('GET', '/products');
+
+  if (!result.ok) {
+    document.getElementById('merchantList').innerHTML = '<p class="hint-text">Error al cargar productos</p>';
+    document.getElementById('productList').innerHTML = '<p class="hint-text">Error al cargar</p>';
+    return;
+  }
+
+  const data = result.data;
+  if (!data.cacheLoaded || !data.data) {
+    document.getElementById('merchantList').innerHTML = '<p class="hint-text">No hay productos cargados. Pulsa Conectar cuando la app este iniciada.</p>';
+    document.getElementById('productList').innerHTML = '<p class="hint-text">Carga productos primero</p>';
+    updateHeaderCount(0, 0);
+    return;
+  }
+
+  _productState = data.data;
+  _currentFilterMode = _productState.filterMode || 'all';
+  updateFilterModeButtons();
+  renderMerchantList(_productState.merchants);
+  renderProductList(_productState.merchants);
+  updateHeaderCount(_productState.totalProducts, _productState.visibleProducts);
+}
+
+/** Renderiza la lista de merchants con toggles. */
+function renderMerchantList(merchants) {
+  const container = document.getElementById('merchantList');
+  if (!container) return;
+
+  if (!merchants || merchants.length === 0) {
+    container.innerHTML = '<p class="hint-text">No hay merchants configurados</p>';
+    return;
+  }
+
+  let html = '';
+  for (const m of merchants) {
+    const enabled = m.enabled !== false;
+    const cls = enabled ? '' : 'disabled';
+    html += `
+      <div class="merchant-item ${cls}" id="merchant-${m.merchantId}">
+        <span class="merchant-icon">${enabled ? '✅' : '⛔'}</span>
+        <div class="merchant-info">
+          <div class="merchant-name">[${m.merchantId}] ${escHtml(m.merchantName)}</div>
+          <div class="merchant-stats">${m.visibleCount}/${m.productCount} visibles</div>
+        </div>
+        <div class="merchant-actions">
+          <label class="toggle-switch" title="${enabled ? 'Deshabilitar' : 'Habilitar'} merchant">
+            <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleMerchant(${m.merchantId}, this)">
+            <span class="toggle-slider"></span>
+          </label>
+          <button class="btn-remove" title="Eliminar merchant" onclick="removeMerchant(${m.merchantId})">×</button>
+        </div>
+      </div>`;
+  }
+  html += `
+    <div style="display:flex;gap:4px;margin-top:6px">
+      <button class="btn-sm" style="flex:1" onclick="addMerchant()">+ Agregar</button>
+      <button class="btn-sm accent" style="flex:1" onclick="reloadProducts()">Recargar</button>
+    </div>`;
+  container.innerHTML = html;
+}
+
+/** Renderiza la lista de productos agrupados por merchant. */
+function renderProductList(merchants) {
+  const container = document.getElementById('productList');
+  if (!container) return;
+
+  if (!merchants || merchants.length === 0) {
+    container.innerHTML = '<p class="hint-text">Sin productos</p>';
+    return;
+  }
+
+  const colors = [
+    '#58a6ff', '#3fb950', '#d29922', '#bc8cff', '#f0883e', '#39d2c0',
+    '#f85149', '#8b949e'
+  ];
+  let colorIdx = 0;
+  let html = '';
+
+  for (const m of merchants) {
+    if (!m.products || m.products.length === 0) continue;
+    const dotColor = colors[colorIdx % colors.length];
+    colorIdx++;
+
+    html += `
+      <div class="merchant-group-header">
+        <span class="merchant-group-dot" style="background:${dotColor}"></span>
+        [${m.merchantId}] ${escHtml(m.merchantName)}
+        <span style="margin-left:auto;font-weight:400;font-size:9px">${m.visibleCount}/${m.productCount}</span>
+      </div>`;
+
+    for (const p of m.products) {
+      const hidden = !p.visible;
+      const pinned = p.pinned;
+      const cls = hidden ? 'hidden' : '';
+      html += `
+        <div class="product-item ${cls}" id="prod-${p.id}">
+          <label class="toggle-switch" title="${hidden ? 'Mostrar' : 'Ocultar'}">
+            <input type="checkbox" ${!hidden ? 'checked' : ''} onchange="toggleProduct(${p.id}, this)">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="product-name">${escHtml(p.name)}</span>
+          <span class="product-price">$${p.price.toFixed(2)}</span>
+          <button class="pin-btn ${pinned ? 'pinned' : ''}" title="${pinned ? 'Desfijar' : 'Fijar (siempre visible)'}" onclick="togglePinProduct(${p.id}, ${!pinned}, this)">📌</button>
+        </div>`;
+    }
+  }
+
+  html += `
+    <div style="display:flex;gap:4px;margin-top:8px">
+      <button class="btn-sm success" style="flex:1" onclick="saveFilters()">Guardar filtros</button>
+    </div>`;
+  container.innerHTML = html;
+}
+
+/** Actualiza el contador en el header de Productos. */
+function updateHeaderCount(total, visible) {
+  const badge = document.getElementById('filterModeBadge');
+  if (badge) badge.textContent = `${_currentFilterMode.toUpperCase()} · ${visible}/${total}`;
+}
+
+/** Habilita/deshabilita un merchant con loading state y auto-refresh. */
+async function toggleMerchant(merchantId, checkbox) {
+  if (_isToggling) { checkbox.checked = !checkbox.checked; return; }
+  _isToggling = true;
+  const enabled = checkbox.checked;
+
+  log(`Merchant ${merchantId}: ${enabled ? 'habilitando' : 'deshabilitando'}...`, 'info');
+  const result = await callEndpoint('POST', '/products/filter', {
+    merchants: { [String(merchantId)]: { enabled } },
+    reload: true
+  });
+
+  if (result.ok) {
+    log(`OK: Merchant ${merchantId} ${enabled ? 'habilitado' : 'deshabilitado'}`, 'ok');
+    setTimeout(() => loadMerchantsAndProducts(), 800);
+  } else {
+    checkbox.checked = !enabled; // Revertir toggle
+    log(`ERR: No se pudo ${enabled ? 'habilitar' : 'deshabilitar'} merchant ${merchantId}`, 'err');
+  }
+  _isToggling = false;
+}
+
+/** Muestra/oculta un producto con loading state y auto-refresh. */
+async function toggleProduct(productId, checkbox) {
+  if (_isToggling) { checkbox.checked = !checkbox.checked; return; }
+  _isToggling = true;
+  const visible = checkbox.checked;
+
+  const result = await callEndpoint('POST', '/products/filter', {
+    products: { [String(productId)]: { visible } },
+    reload: true
+  });
+
+  if (result.ok) {
+    log(`Producto ${productId}: ${visible ? 'visible' : 'oculto'}`, 'ok');
+    setTimeout(() => loadMerchantsAndProducts(), 800);
+  } else {
+    checkbox.checked = !visible;
+    log(`ERR: No se pudo ${visible ? 'mostrar' : 'ocultar'} producto ${productId}`, 'err');
+  }
+  _isToggling = false;
+}
+
+/** Fija/desfija un producto con loading state y auto-refresh. */
+async function togglePinProduct(productId, pinned, btn) {
+  if (_isToggling) return;
+  _isToggling = true;
+
+  if (btn) btn.style.opacity = '0.5';
+
+  const result = await callEndpoint('POST', '/products/filter', {
+    products: { [String(productId)]: { pinned } },
+    reload: true
+  });
+
+  if (btn) btn.style.opacity = '';
+
+  if (result.ok) {
+    log(`Producto ${productId}: ${pinned ? 'fijado' : 'desfijado'}`, 'ok');
+    setTimeout(() => loadMerchantsAndProducts(), 800);
+  } else {
+    log(`ERR: No se pudo ${pinned ? 'fijar' : 'desfijar'} producto ${productId}`, 'err');
+  }
+  _isToggling = false;
+}
+
+/** Cambia el modo de filtro con loading state y auto-refresh. */
+async function setFilterMode(mode) {
+  if (_isToggling) return;
+  _isToggling = true;
+  _currentFilterMode = mode;
+  updateFilterModeButtons();
+
+  log(`Cambiando modo de filtro a: ${mode}...`, 'info');
+  const result = await callEndpoint('POST', '/products/filter', {
+    filterMode: mode,
+    reload: true
+  });
+
+  if (result.ok) {
+    log(`OK: Modo de filtro: ${mode}`, 'ok');
+    setTimeout(() => loadMerchantsAndProducts(), 800);
+  } else {
+    log(`ERR: No se pudo cambiar el modo de filtro`, 'err');
+  }
+  _isToggling = false;
+}
+
+/** Actualiza los botones de modo de filtro visualmente. */
+function updateFilterModeButtons() {
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === _currentFilterMode);
+  });
+}
+
+/** Guarda los filtros actuales en disco (persistencia). */
+async function saveFilters() {
+  if (!_productState) {
+    log('No hay productos cargados', 'warn');
+    return;
+  }
+  // La config ya se persiste al hacer POST /products/filter con reload:true
+  // Este boton es para feedback visual
+  log('Filtros guardados en la app.', 'ok');
+  loadMerchantsAndProducts();
+}
+
+/** Agrega un nuevo merchant ID a la configuracion. */
+async function addMerchant() {
+  const input = prompt('Ingresa el ID del nuevo merchant:');
+  if (!input) return;
+  const id = parseInt(input.trim());
+  if (isNaN(id) || id <= 0) {
+    log('ID invalido', 'warn');
+    return;
+  }
+
+  // Leer el input actual de merchantIds
+  const raw = document.getElementById('cfgMerchantIds').value.trim();
+  const ids = raw ? raw.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0) : [];
+  if (!ids.includes(id)) ids.push(id);
+
+  // Actualizar input y guardar
+  document.getElementById('cfgMerchantIds').value = ids.join(',');
+  await updateConfig();
+}
+
+/** Elimina un merchant de la configuracion. */
+async function removeMerchant(merchantId) {
+  if (!confirm(`Eliminar merchant ${merchantId}?`)) return;
+
+  const raw = document.getElementById('cfgMerchantIds').value.trim();
+  const ids = raw ? raw.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0) : [];
+  const filtered = ids.filter(id => id !== merchantId);
+  document.getElementById('cfgMerchantIds').value = filtered.join(',');
+  await updateConfig();
+}
+
+/** Fuerza la recarga de productos desde la API del backend. */
+async function reloadProducts() {
+  if (_isToggling) return;
+  _isToggling = true;
+
+  // Buscar todos los botones de recargar y mostrar loading
+  const btns = document.querySelectorAll('button');
+  const reloadBtns = [];
+  btns.forEach(b => { if (b.textContent.includes('Recargar')) reloadBtns.push(b); });
+  reloadBtns.forEach(b => b.classList.add('spinning'));
+
+  log('Forzando recarga de productos...', 'info');
+  const result = await callEndpoint('POST', '/products/reload');
+
+  reloadBtns.forEach(b => b.classList.remove('spinning'));
+
+  if (result.ok) {
+    log(result.data.message, 'ok');
+    setTimeout(() => loadMerchantsAndProducts(), 1500);
+  } else {
+    log('ERR: No se pudo recargar', 'err');
+  }
+  _isToggling = false;
+}
+
+/** Escapa HTML para prevenir XSS. */
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 window.addEventListener('DOMContentLoaded', () => {
   loadSavedUrl();

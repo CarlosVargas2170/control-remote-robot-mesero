@@ -499,3 +499,230 @@ html, body {
     min-height: 160px;
   }
 }
+
+/* ════════════════════════════════════════════
+   MERCHANTS & PRODUCTS (Remote Control v2)
+   ════════════════════════════════════════════ */
+
+/* ── Hint text ── */
+.hint-text {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+/* ── Small button ── */
+.btn-sm {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  transition: all 0.12s;
+}
+.btn-sm:hover { border-color: var(--border-hover); color: var(--text); }
+.btn-sm.accent  { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+.btn-sm.success { background: var(--accent-emerald); color: #0d1117; border-color: var(--accent-emerald); }
+
+/* ── Merchant item ── */
+.merchant-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+  transition: opacity 0.2s;
+}
+.merchant-item.disabled { opacity: 0.45; }
+.merchant-item.disabled .merchant-name { text-decoration: line-through; }
+
+.merchant-icon { font-size: 14px; flex-shrink: 0; }
+
+.merchant-info { flex: 1; min-width: 0; }
+.merchant-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.merchant-stats {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.merchant-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+/* ── Toggle switch ── */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--gray);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--accent-emerald); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+/* ── Product item ── */
+.product-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  transition: opacity 0.2s;
+}
+.product-item:last-child { border-bottom: none; }
+.product-item.hidden { opacity: 0.35; }
+.product-item.hidden .product-name { text-decoration: line-through; color: var(--text-dim); }
+
+.product-name { flex: 1; color: var(--text); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.product-price { color: var(--text-secondary); flex-shrink: 0; font-size: 10px; }
+.product-merchant-tag {
+  font-size: 9px;
+  background: var(--surface-raised);
+  color: var(--text-dim);
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.pin-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+  line-height: 1;
+  opacity: 0.3;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.pin-btn.pinned { opacity: 1; color: var(--yellow); }
+.pin-btn:hover { opacity: 0.7; }
+
+/* ── Merchant group header ── */
+.merchant-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-top: 1px solid var(--border-hover);
+  margin-top: 4px;
+}
+.merchant-group-header:first-child { border-top: none; margin-top: 0; }
+.merchant-group-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Filter mode row ── */
+.filter-mode-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 600;
+  transition: all 0.12s;
+}
+.mode-btn:hover { border-color: var(--border-hover); color: var(--text); }
+.mode-btn.active { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+
+.filter-mode-badge {
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--surface-raised);
+  color: var(--text-dim);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
+/* ── Remove merchant btn ── */
+.btn-remove {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--red);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  transition: all 0.12s;
+}
+.btn-remove:hover { background: rgba(248,81,73,0.12); }
+
+/* ── Loading states ── */
+.toggle-loading .toggle-slider {
+  animation: toggle-pulse 0.8s ease-in-out infinite;
+  background: var(--yellow) !important;
+}
+@keyframes toggle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.product-item.loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.merchant-item.loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ── Reload spinner ── */
+.btn-sm.spinning {
+  pointer-events: none;
+  opacity: 0.6;
+}
+.btn-sm.spinning::after {
+  content: ' ⏳';
+  animation: spin-emoji 1s linear infinite;
+  display: inline-block;
+}
+@keyframes spin-emoji {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
