@@ -50,19 +50,19 @@
         <section class="block">
           <div class="block-header">
             <span class="block-icon">📡</span>
-            <span class="block-title">Detección</span>
+            <span class="block-title">Gifs</span>
           </div>
           <div class="action-grid">
             <button class="action-card" onclick="callEndpoint('POST','/proximity/near')">
               <span class="action-card-icon">👋</span>
-              <span class="action-card-label">Cerca</span>
-              <span class="action-card-sub">Modo interactivo</span>
+              <span class="action-card-label">Normal</span>
+              <span class="action-card-sub">Cara normal</span>
             </button>
-            <button class="action-card" onclick="callEndpoint('POST','/proximity/away')">
+            <!-- <button class="action-card" onclick="callEndpoint('POST','/proximity/away')">
               <span class="action-card-icon">🚶</span>
               <span class="action-card-label">Lejos</span>
               <span class="action-card-sub">Volver a reposo</span>
-            </button>
+            </button> -->
           </div>
         </section>
 
@@ -74,27 +74,67 @@
           <div class="action-grid">
             <button class="action-card accent" data-audio="/greet">
               <span class="action-card-icon">🗣️</span>
-              <span class="action-card-label">Saludar</span>
+              <span class="action-card-label">Café + imagen</span>
               <span class="action-card-sub">Producto + audio</span>
             </button>
             <button class="action-card" onclick="callEndpoint('POST','/product')">
               <span class="action-card-icon">🖼️</span>
-              <span class="action-card-label">Producto</span>
+              <span class="action-card-label">Solo imagen del producto</span>
               <span class="action-card-sub">Solo imagen</span>
             </button>
-            <button class="action-card danger" onclick="callEndpoint('POST','/cancel-payment')">
+            <!-- <button class="action-card danger" onclick="callEndpoint('POST','/cancel-payment')">
               <span class="action-card-icon">✖️</span>
               <span class="action-card-label">Cancelar</span>
               <span class="action-card-sub">Cancelar pago</span>
-            </button>
+            </button> -->
           </div>
         </section>
 
         <!-- ─── Audios ─── -->
+
+        <section class="block">
+         <div class="block-header">
+            <span class="block-icon">🔊</span>
+            <span class="block-title">Saludos</span>
+        </div>
+        <div class="action-grid cols-3">
+            <button class="action-card" onclick="quickPlay('audio/hello.wav', 'audio/hello.wav')">
+              <span class="action-card-icon">👋</span>
+              <span class="action-card-label">¿Hola, que tal?</span>
+            </button>
+
+            <button class="action-card" onclick="quickPlay('audio/hello_and_question_name.wav', 'audio/hello_and_question_name.wav')">
+              <span class="action-card-icon">👋</span>
+              <span class="action-card-label">Hola Me llamo Robot Mesero ¿Tú cómo te llamas?</span>
+            </button>
+           
+          </div>
+        </section>
+        <section class="block">
+         <div class="block-header">
+            <span class="block-icon">🔊</span>
+            <span class="block-title">Alertas</span>
+        </div>
+        <div class="action-grid cols-3">
+            <button class="action-card" data-audio="/play-attention">
+              <span class="action-card-icon">⚠️</span>
+              <span class="action-card-label">Atención, con permiso con favor</span>
+            </button>
+
+            <button class="action-card" onclick="quickPlay('audio/attention_with_service.wav', 'audio/attention_with_service.wav')">
+              <span class="action-card-icon">⚠️</span>
+              <span class="action-card-label">¡Con permiso por favor! Robot Mesero en servicio</span>
+            </button>
+           
+          </div>
+        </section>
+
         <section class="block">
           <div class="block-header">
             <span class="block-icon">🔊</span>
             <span class="block-title">Audios</span>
+
+            
           </div>
           <div class="action-grid cols-3">
             <button class="action-card" data-audio="/play-question">
@@ -113,10 +153,7 @@
               <span class="action-card-icon">🔔</span>
               <span class="action-card-label">Tengo un pedido, ¿Lo puedes revisar?, son los que dicen Robot Mesero</span>
             </button>
-            <button class="action-card" data-audio="/play-attention">
-              <span class="action-card-icon">⚠️</span>
-              <span class="action-card-label">Atención, con permiso con favor</span>
-            </button>
+
             <button class="action-card" data-audio="/play-collect-tray">
               <span class="action-card-icon">🍽️</span>
               <span class="action-card-label">¿Hola, puedo recoger tu bandeja?</span>
@@ -237,9 +274,9 @@
           </div>
           <div class="config-card">
             <div class="filter-mode-row">
-              <button class="btn-sm mode-btn active" data-mode="all" onclick="setFilterMode('all')">Mostrar todo</button>
-              <button class="btn-sm mode-btn" data-mode="blacklist" onclick="setFilterMode('blacklist')">Blacklist</button>
-              <button class="btn-sm mode-btn" data-mode="whitelist" onclick="setFilterMode('whitelist')">Whitelist</button>
+              <!-- <button class="btn-sm mode-btn active" data-mode="all" onclick="setFilterMode('all')">Mostrar todo</button> -->
+              <button class="btn-sm mode-btn" data-mode="blacklist" onclick="setFilterMode('blacklist')">Productos</button>
+              <!-- <button class="btn-sm mode-btn" data-mode="whitelist" onclick="setFilterMode('whitelist')">Whitelist</button> -->
             </div>
             <div id="productList">
               <p class="hint-text">Carga productos primero</p>
