@@ -32,9 +32,6 @@ const AUDIO_LABELS = {
   'Hola_deseas_un_Brown.wav':    'Hola, ¿deseas un Brownie de Kíky?',
   'Hola_deseas_un_Cremo.wav':    'Hola, ¿deseas un Cremoso 3 Leches?',
   'Muchas_graacias.wav':         'Muchas gracias',
-  'hello.wav':                   'Hola. ¿que tal?',
-  'hello_and_question_name.wav': 'Hola Me llamo Robot Mesero ¿Tú cómo te llamas?',
-  'attention_with_service.wav': '¡Con permiso por favor! Robot Mesero en servicio',
 };
 
 // ── Helpers ──
@@ -147,7 +144,6 @@ function hideAudioBadge() {
  */
 async function callEndpoint(method, path, body = null, localAudioFile = null) {
   const baseUrl = getBaseUrl();
-  console.log(path)
   const url = `${baseUrl}${path}`;
   log(`${method} ${path} ...`, 'info');
 
@@ -174,13 +170,7 @@ async function callEndpoint(method, path, body = null, localAudioFile = null) {
 
     if (res.ok) {
       setConnectionStatus(true);
-
-      if(path === '/products' ||path ==='/products/filter'){
-        log(`OK ${res.status} → productos obtenidos`, 'ok');
-      }else{
-        log(`OK ${res.status} → ${JSON.stringify(data)}`, 'ok');
-      }
-
+      log(`OK ${res.status} → ${JSON.stringify(data)}`, 'ok');
 
       // Si el robot no reprodujo por cooldown, cortar el audio local también
       if (localAudioFile && data && data.played === false) {
@@ -582,7 +572,7 @@ function renderProductList(merchants) {
             <input type="checkbox" ${!hidden ? 'checked' : ''} onchange="toggleProduct(${p.id}, this)">
             <span class="toggle-slider"></span>
           </label>
-          <span class="product-name">${escHtml(p.name)}- ID: ${escHtml(p.id)}</span>
+          <span class="product-name">${escHtml(p.name)}</span>
           <span class="product-price">$${p.price.toFixed(2)}</span>
           <button class="pin-btn ${pinned ? 'pinned' : ''}" title="${pinned ? 'Desfijar' : 'Fijar (siempre visible)'}" onclick="togglePinProduct(${p.id}, ${!pinned}, this)">📌</button>
         </div>`;
