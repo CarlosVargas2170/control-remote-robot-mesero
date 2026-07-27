@@ -210,6 +210,158 @@ async function testConnection() {
     log(`Conectado! Merchants=${merchants.join(',')}, Product=${cfg.productId}`, 'ok');
     // Cargar productos automaticamente tras conectar
     loadMerchantsAndProducts();
+    // Empezar a observar el estado de polling del robot
+    startPollingStatusWatcher();
+    refreshPollingStatus();
+  } else {
+    stopPollingStatusWatcher();
+    updatePollingStatusUI({ phase: 'idle', isPolling: false, label: 'Sin conexión' });
+  }
+}
+
+// ── Polling status (sincronizado con la app Flutter) ──
+
+let _pollingStatusTimer = null;
+const POLLING_STATUS_INTERVAL_MS = 2000;
+
+/** Arranca el watcher que consulta GET /payment/polling-status. */
+function startPollingStatusWatcher() {
+  stopPollingStatusWatcher();
+  _pollingStatusTimer = setInterval(refreshPollingStatus, POLLING_STATUS_INTERVAL_MS);
+}
+
+function stopPollingStatusWatcher() {
+  if (_pollingStatusTimer) {
+    clearInterval(_pollingStatusTimer);
+    _pollingStatusTimer = null;
+  }
+}
+
+/** Consulta el estado real del polling en el robot y actualiza la UI. */
+async function refreshPollingStatus() {
+  const baseUrl = getBaseUrl();
+  try {
+    const res = await fetch(`${baseUrl}/payment/polling-status`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) {
+      updatePollingStatusUI({
+        phase: 'idle',
+        isPolling: false,
+        label: 'Estado no disponible',
+      });
+      return;
+    }
+    const data = await res.json();
+    updatePollingStatusUI(data);
+  } catch (_) {
+    // Silencioso: no spamear la consola cada 2s si hay desconexión breve
+  }
+}
+
+/**
+ * Pinta el badge de estado de polling.
+ * @param {Object} data - Respuesta de GET /payment/polling-status
+ */
+function updatePollingStatusUI(data) {
+  const card = document.getElementById('pollingStatusCard');
+  const labelEl = document.getElementById('pollingStatusLabel');
+  const detailEl = document.getElementById('pollingStatusDetail');
+  const btnStart = document.getElementById('btnStartPolling');
+  const btnStop = document.getElementById('btnStopPolling');
+  if (!card || !labelEl || !detailEl) return;
+
+  const phase = data.phase || (data.isPolling ? 'polling' : 'idle');
+  const label = data.label || (data.isPolling ? 'Polling activo' : 'Polling detenido');
+
+  card.dataset.phase = phase;
+  labelEl.textContent = label;
+
+  // Detalle: producto / orden / merchant
+  const parts = [];
+  if (data.productName) parts.push(data.productName);
+  if (data.productId != null) parts.push(`prod #${data.productId}`);
+  if (data.merchantId != null) parts.push(`m #${data.merchantId}`);
+  if (data.orderId != null) parts.push(`orden #${data.orderId}`);
+  if (data.amount != null) parts.push(`Bs ${Number(data.amount).toFixed(2)}`);
+  detailEl.textContent = parts.length
+    ? parts.join(' · ')
+    : (phase === 'idle' ? 'Sin producto activo en pantalla' : '—');
+
+  // Resalta el botón relevante
+  if (btnStart && btnStop) {
+    btnStart.classList.toggle('is-active-hint', !data.isPolling);
+    btnStop.classList.toggle('is-active-hint', data.isPolling);
+  }
+
+  // Actualizar contador de ventas
+  if (data.counter) {
+    updateSalesCounter(data.counter);
+  }
+}
+
+/** Pinta el contador de ventas en la UI. */
+function updateSalesCounter(counter) {
+  const numberEl = document.getElementById('salesCounterNumber');
+  const amountEl = document.getElementById('salesCounterAmount');
+  const byProductEl = document.getElementById('salesByProduct');
+  const lastTimeEl = document.getElementById('salesLastTime');
+
+  if (numberEl) numberEl.textContent = counter.totalSales ?? 0;
+  if (amountEl) amountEl.textContent = `Bs ${Number(counter.totalAmount || 0).toFixed(2)}`;
+
+  if (byProductEl) {
+    const products = counter.byProduct || [];
+    if (products.length === 0) {
+      byProductEl.innerHTML = '';
+      byProductEl.style.display = 'none';
+    } else {
+      const items = products
+        .map(p => `<span class="sales-product-tag">${escHtml(p.name)} x${p.count}</span>`)
+        .join('');
+      byProductEl.innerHTML = items;
+      byProductEl.style.display = 'flex';
+    }
+  }
+
+  // Hora de la última venta
+  if (lastTimeEl) {
+    const recent = counter.recent || [];
+    if (recent.length > 0) {
+      const d = new Date(recent[0].time);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      lastTimeEl.textContent = `Última: ${hh}:${mm}:${ss}`;
+      lastTimeEl.style.display = 'block';
+    } else {
+      lastTimeEl.style.display = 'none';
+    }
+  }
+}
+
+
+/** Inicia polling en el robot y refresca el badge al instante. */
+async function startPolling() {
+  const result = await callEndpoint('POST', '/payment/start-polling');
+  // La app tarda un tick en publicar; refrescar ya + un poco después
+  refreshPollingStatus();
+  setTimeout(refreshPollingStatus, 400);
+  setTimeout(refreshPollingStatus, 1200);
+  if (result.ok) {
+    log('Comando: iniciar polling enviado', 'ok');
+  }
+}
+
+/** Detiene polling en el robot y refresca el badge. */
+async function stopPolling() {
+  const result = await callEndpoint('POST', '/payment/stop-polling');
+  refreshPollingStatus();
+  setTimeout(refreshPollingStatus, 400);
+  setTimeout(refreshPollingStatus, 1200);
+  if (result.ok) {
+    log('Comando: detener polling enviado', 'ok');
   }
 }
 
@@ -236,11 +388,16 @@ async function quickPlay(assetPath, localPath) {
   // Reproducir localmente
   playLocal(localPath);
 
+  // Extraer nombre del archivo para el displayText en el robot.
+  const fileName = localPath.includes('/') ? localPath.split('/').pop() : localPath;
+  const displayText = AUDIO_LABELS[fileName] || null;
+
   // Enviar al robot
   const result = await callEndpoint('POST', '/audio/play', {
     asset: assetPath,
     volume: 1.0,
     force: false,
+    displayText: displayText,
   });
 
   if (!result.ok) {
@@ -252,6 +409,7 @@ async function playCustomAudio() {
   const asset = document.getElementById('customAsset').value.trim();
   const volume = parseFloat(document.getElementById('customVolume').value) || 1.0;
   const force = document.getElementById('customForce').checked;
+  const displayText = document.getElementById('customDisplayText')?.value?.trim() || null;
 
   if (!asset) {
     log('Escribe la ruta del asset de audio', 'warn');
@@ -265,7 +423,12 @@ async function playCustomAudio() {
   // Reproducir local ANTES del endpoint (sincronía)
   playLocal(localFile);
 
-  const result = await callEndpoint('POST', '/audio/play', { asset, volume, force });
+  const result = await callEndpoint('POST', '/audio/play', {
+    asset,
+    volume,
+    force,
+    displayText: displayText,
+  });
   // No se pasa localFile a callEndpoint: playLocal ya se ejecutó arriba.
   // Si el endpoint falla, callEndpoint NO hará rollback (porque no recibió localAudioFile)
   // así que el audio local sigue sonando como fallback.
@@ -615,5 +778,11 @@ function escHtml(str) {
 window.addEventListener('DOMContentLoaded', () => {
   loadSavedUrl();
   bindAudioButtons();
+  updatePollingStatusUI({
+    phase: 'idle',
+    isPolling: false,
+    label: 'Polling detenido',
+    counter: { totalSales: 0, totalAmount: 0 },
+  });
   log('Panel de control listo. Configura la IP y pulsa Conectar.', 'info');
 });

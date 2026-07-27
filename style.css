@@ -726,3 +726,186 @@ html, body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ── Polling status badge (Pago QR) ── */
+.polling-status-card {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+}
+
+.polling-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.polling-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--gray);
+  transition: background 0.25s, box-shadow 0.25s;
+}
+
+.polling-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.polling-status-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.polling-status-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* idle / waiting — detenido */
+.polling-status-card[data-phase="idle"],
+.polling-status-card[data-phase="waiting"] {
+  border-color: var(--border);
+}
+.polling-status-card[data-phase="idle"] .polling-dot,
+.polling-status-card[data-phase="waiting"] .polling-dot {
+  background: var(--gray);
+}
+.polling-status-card[data-phase="waiting"] .polling-status-label {
+  color: var(--text-secondary);
+}
+
+/* polling — activo (verde + pulso) */
+.polling-status-card[data-phase="polling"] {
+  border-color: rgba(63, 185, 80, 0.45);
+  background: rgba(63, 185, 80, 0.08);
+  box-shadow: 0 0 0 1px rgba(63, 185, 80, 0.12);
+}
+.polling-status-card[data-phase="polling"] .polling-dot {
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(63, 185, 80, 0.7);
+  animation: polling-pulse 1.2s ease-in-out infinite;
+}
+.polling-status-card[data-phase="polling"] .polling-status-label {
+  color: var(--green);
+}
+
+/* success */
+.polling-status-card[data-phase="success"] {
+  border-color: rgba(63, 185, 80, 0.5);
+  background: rgba(63, 185, 80, 0.12);
+}
+.polling-status-card[data-phase="success"] .polling-dot {
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(63, 185, 80, 0.5);
+}
+.polling-status-card[data-phase="success"] .polling-status-label {
+  color: var(--green);
+}
+
+/* failed */
+.polling-status-card[data-phase="failed"] {
+  border-color: rgba(248, 81, 73, 0.45);
+  background: rgba(248, 81, 73, 0.08);
+}
+.polling-status-card[data-phase="failed"] .polling-dot {
+  background: var(--red);
+}
+.polling-status-card[data-phase="failed"] .polling-status-label {
+  color: var(--red);
+}
+
+@keyframes polling-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.65; }
+}
+
+/* ── Contador de ventas ── */
+.sales-counter-card {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(63, 185, 80, 0.25);
+  background: rgba(63, 185, 80, 0.06);
+}
+
+.sales-counter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sales-counter-icon {
+  font-size: 18px;
+}
+
+.sales-counter-number {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+}
+
+.sales-counter-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sales-counter-amount {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.sales-by-product {
+  display: none;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.sales-product-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(63, 185, 80, 0.12);
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.sales-last-time {
+  display: none;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* Botones resaltados según estado */
+#btnStartPolling.is-active-hint {
+  outline: 1px solid rgba(63, 185, 80, 0.35);
+}
+#btnStopPolling.is-active-hint {
+  outline: 1px solid rgba(248, 81, 73, 0.4);
+}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0d1117">
   <title>Control Mesero Robot</title>
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=14">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -27,7 +27,7 @@
       <div class="url-bar">
         <div class="url-input-wrap">
           <span class="url-icon">🔌</span>
-          <input type="text" id="baseUrl" placeholder="http://IP_DEL_ROBOT:8080" value="http://192.168.21.71:5050">
+          <input type="text" id="baseUrl" placeholder="http://IP_DEL_ROBOT:8080" value="http://100.99.244.72:5050">
         </div>
         <button class="btn-connect" onclick="testConnection()">Conectar</button>
       </div>
@@ -87,6 +87,49 @@
               <span class="action-card-label">Cancelar</span>
               <span class="action-card-sub">Cancelar pago</span>
             </button> -->
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="block-header">
+            <span class="block-icon">💳</span>
+            <span class="block-title">Pago QR</span>
+          </div>
+
+          <!-- Estado visual del polling (sincronizado con la app) -->
+          <div class="polling-status-card" id="pollingStatusCard" data-phase="idle">
+            <div class="polling-status-row">
+              <span class="polling-dot" id="pollingDot"></span>
+              <div class="polling-status-text">
+                <span class="polling-status-label" id="pollingStatusLabel">Polling detenido</span>
+                <span class="polling-status-detail" id="pollingStatusDetail">Conecta y muestra un producto</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contador de ventas -->
+          <div class="sales-counter-card" id="salesCounterCard">
+            <div class="sales-counter-row">
+              <span class="sales-counter-icon">🛒</span>
+              <span class="sales-counter-number" id="salesCounterNumber">0</span>
+              <span class="sales-counter-label">ventas</span>
+              <span class="sales-counter-amount" id="salesCounterAmount">Bs 0.00</span>
+            </div>
+            <div class="sales-by-product" id="salesByProduct"></div>
+            <div class="sales-last-time" id="salesLastTime"></div>
+          </div>
+
+          <div class="action-grid">
+            <button class="action-card accent" id="btnStartPolling" onclick="startPolling()">
+              <span class="action-card-icon">📡</span>
+              <span class="action-card-label">Iniciar polling</span>
+              <span class="action-card-sub">Esperar confirmación de pago</span>
+            </button>
+            <button class="action-card danger" id="btnStopPolling" onclick="stopPolling()">
+              <span class="action-card-icon">⏹️</span>
+              <span class="action-card-label">Detener polling</span>
+              <span class="action-card-sub">Deja de consultar el estado</span>
+            </button>
           </div>
         </section>
 
@@ -176,6 +219,9 @@
           <div class="audio-custom">
             <div class="audio-custom-row">
               <input type="text" id="customAsset" placeholder="Ruta del audio (ej: audio/alerta.wav)" value="audio/question_coffe_old2.wav">
+            </div>
+            <div class="audio-custom-row">
+              <input type="text" id="customDisplayText" placeholder="Texto a mostrar en pantalla (opcional)">
             </div>
             <div class="audio-custom-row split">
               <input type="number" id="customVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
@@ -303,6 +349,6 @@
     <footer class="footer">Control Remoto · Mesero Robot</footer>
   </div>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>
