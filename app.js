@@ -29,8 +29,8 @@ const AUDIO_LABELS = {
   'here_is_coffee.wav':      '¡Aquí está tu café!',
   // Kíky audios
   'Aqui_tienes_Que_lo_d.wav':    'Aquí tienes. ¡Que lo disfrutes!',
-  'Hola_deseas_un_Brown.wav':    'Hola, ¿deseas un Brownie de Kíky?',
-  'Hola_deseas_un_Cremo.wav':    'Hola, ¿deseas un Cremoso 3 Leches?',
+  'Hola_deseas_un_Brown.wav':    'Hola, ¿deseas un Brownie de Kiky?',
+  'Hola_deseas_un_Cremo.wav':    'Hola, ¿deseas un Cremoso 3 Leches de Kiky?',
   'Muchas_graacias.wav':         'Muchas gracias',
   'hello.wav':                   'Hola. ¿que tal?',
   'hello_and_question_name.wav': 'Hola Me llamo Robot Mesero ¿Tú cómo te llamas?',
@@ -395,7 +395,9 @@ async function quickPlay(assetPath, localPath) {
 
   // Extraer nombre del archivo para el displayText en el robot.
   const fileName = localPath.includes('/') ? localPath.split('/').pop() : localPath;
+  console.log("nombre del archivo: "+fileName)
   const displayText = AUDIO_LABELS[fileName] || null;
+  console.log("texto del audio: "+displayText)
 
   // Enviar al robot
   const result = await callEndpoint('POST', '/audio/play', {
