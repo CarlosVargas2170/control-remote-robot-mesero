@@ -53,10 +53,50 @@
             <span class="block-title">Gifs</span>
           </div>
           <div class="action-grid">
-            <button class="action-card" onclick="callEndpoint('POST','/proximity/near')">
-              <span class="action-card-icon">👋</span>
+            <button class="action-card" onclick="setEmotion('normal')">
+              <span class="action-card-icon">🙂</span>
               <span class="action-card-label">Normal</span>
               <span class="action-card-sub">Cara normal</span>
+            </button>
+            <button class="action-card" onclick="setEmotion('happy')">
+              <span class="action-card-icon">😊</span>
+              <span class="action-card-label">feliz</span>
+              <span class="action-card-sub">Cara feliz</span>
+            </button>
+            <button class="action-card" onclick="setEmotion('angry')">
+              <span class="action-card-icon">😠</span>
+              <span class="action-card-label">Enojado</span>
+              <span class="action-card-sub">Cara enojada</span>
+            </button>
+            <button class="action-card" onclick="setEmotion('cry')">
+              <span class="action-card-icon">😢</span>
+              <span class="action-card-label">Llorando</span>
+              <span class="action-card-sub">Cara llorando</span>
+            </button>
+            <button class="action-card" onclick="setEmotion('love')">
+              <span class="action-card-icon">😍</span>
+              <span class="action-card-label">Amor</span>
+              <span class="action-card-sub">Cara de amor</span>
+            </button>
+            <button class="action-card" onclick="setEmotion('money')">
+              <span class="action-card-icon">🤑</span>
+              <span class="action-card-label">Dinero</span>
+              <span class="action-card-sub">Cara de dinero</span>
+            </button>
+            <button class="action-card" onclick="setEmotion('sad')">
+              <span class="action-card-icon">😔</span>
+              <span class="action-card-label">Triste</span>
+              <span class="action-card-sub">Cara triste</span>
+            </button>
+            <button class="action-card" onclick="setEmotion('sleep')">
+              <span class="action-card-icon">😴</span>
+              <span class="action-card-label">Dormido</span>
+              <span class="action-card-sub">Cara dormida</span>
+            </button>
+            <button class="action-card" onclick="setEmotion('confused')">
+              <span class="action-card-icon">😕</span>
+              <span class="action-card-label">Confundido</span>
+              <span class="action-card-sub">Cara confundida</span>
             </button>
             <!-- <button class="action-card" onclick="callEndpoint('POST','/proximity/away')">
               <span class="action-card-icon">🚶</span>

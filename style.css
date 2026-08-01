@@ -210,7 +210,7 @@ html, body {
 /* ═══ ACTION GRID ═══ */
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
 }
 
@@ -223,35 +223,68 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 10px 4px 8px;
+  gap: 2px;
+  padding: 6px 4px 5px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
   cursor: pointer;
-  transition: all 0.12s;
+  transition: all 0.15s ease;
   text-align: center;
-  min-height: 68px;
+  min-height: 48px;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(88,166,255,0.04) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.action-card:hover {
+  background: var(--surface-raised);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.action-card:hover::before {
+  opacity: 1;
 }
 
 .action-card:active {
   background: var(--surface-raised);
-  border-color: var(--border-hover);
+  border-color: var(--accent);
   transform: scale(0.97);
+  transition: all 0.08s ease;
 }
 
-.action-card-icon { font-size: 22px; line-height: 1; }
+.action-card-icon {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.action-card:hover .action-card-icon {
+  transform: scale(1.12);
+}
 
 .action-card-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text);
   line-height: 1;
 }
 
 .action-card-sub {
-  font-size: 9px;
+  font-size: 8px;
   color: var(--text-dim);
   line-height: 1;
 }

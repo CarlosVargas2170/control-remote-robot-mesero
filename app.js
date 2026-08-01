@@ -145,6 +145,11 @@ function hideAudioBadge() {
  * @param {Object|null} body - Body de la peticion (solo POST/PUT).
  * @param {string|null} localAudioFile - Ruta local del audio a reproducir si la respuesta es OK.
  */
+async function setEmotion(emotion) {
+  const result = await callEndpoint('POST', '/attract/set', { gif: emotion });
+}
+
+
 async function callEndpoint(method, path, body = null, localAudioFile = null) {
   const baseUrl = getBaseUrl();
   console.log(path)
