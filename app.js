@@ -35,6 +35,9 @@ const AUDIO_LABELS = {
   'hello.wav':                   'Hola. ¿que tal?',
   'hello_and_question_name.wav': 'Hola Me llamo Robot Mesero ¿Tú cómo te llamas?',
   'attention_with_service.wav': '¡Con permiso por favor! Robot Mesero en servicio',
+
+  'please_return_prod.wav':       'Por favor, devuelve el producto a la bandeja',
+  'switch_product.wav':           'Con un solo dedo puedes deslizar hacia la derecha o izquierda para cambiar de producto'
 };
 
 // ── Helpers ──
@@ -770,6 +773,45 @@ async function reloadProducts() {
     log('ERR: No se pudo recargar', 'err');
   }
   _isToggling = false;
+}
+
+/** Muestra/oculta el panel de selección de alertas según el toggle. */
+function toggleAlertasSelect() {
+  const toggle = document.getElementById('alertasToggle');
+  const panel = document.getElementById('alertasPanel');
+  if (toggle && panel) {
+    panel.style.display = toggle.checked ? 'flex' : 'none';
+  }
+}
+
+/** Reproduce la alerta seleccionada en el dropdown. */
+async function playAlertAudio() {
+  const select = document.getElementById('alertasDropdown');
+  const volume = parseFloat(document.getElementById('alertasVolume').value) || 1.0;
+  const asset = select?.value?.trim();
+
+  if (!asset) {
+    log('Selecciona una alerta del dropdown', 'warn');
+    return;
+  }
+
+  const fileName = asset.includes('/') ? asset.split('/').pop() : asset;
+  const localFile = `audio/${fileName}`;
+
+  // Reproducir local
+  playLocal(localFile);
+
+  // Enviar al robot
+  const result = await callEndpoint('POST', '/audio/play', {
+    asset,
+    volume,
+    force: true,
+    displayText: null,
+  });
+
+  if (!result.ok) {
+    log('⚠️ Robot no reprodujo. Sonando solo local.', 'warn');
+  }
 }
 
 /** Escapa HTML para prevenir XSS. */

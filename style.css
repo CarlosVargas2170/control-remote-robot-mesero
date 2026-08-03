@@ -329,6 +329,37 @@ html, body {
 
 .audio-custom input:focus { outline: none; border-color: var(--accent); }
 
+/* ── Alertas extra (toggle + select) ── */
+.alertas-extra {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.alertas-extra-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.alertas-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.alertas-select:focus { outline: none; border-color: var(--accent); }
+
+.alertas-select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
 .toggle-label {
   display: flex;
   align-items: center;

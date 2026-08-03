@@ -46,6 +46,49 @@
       <!-- ─── Panel izquierdo: Controles (scrollable) ─── -->
       <div class="controls-panel">
 
+        <section class="block">
+          <div class="block-header">
+            <span class="block-icon">💳</span>
+            <span class="block-title">Pago QR</span>
+          </div>
+
+          <!-- Estado visual del polling (sincronizado con la app) -->
+          <div class="polling-status-card" id="pollingStatusCard" data-phase="idle">
+            <div class="polling-status-row">
+              <span class="polling-dot" id="pollingDot"></span>
+              <div class="polling-status-text">
+                <span class="polling-status-label" id="pollingStatusLabel">Polling detenido</span>
+                <span class="polling-status-detail" id="pollingStatusDetail">Conecta y muestra un producto</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contador de ventas -->
+          <div class="sales-counter-card" id="salesCounterCard">
+            <div class="sales-counter-row">
+              <span class="sales-counter-icon">🛒</span>
+              <span class="sales-counter-number" id="salesCounterNumber">0</span>
+              <span class="sales-counter-label">ventas</span>
+              <span class="sales-counter-amount" id="salesCounterAmount">Bs 0.00</span>
+            </div>
+            <div class="sales-by-product" id="salesByProduct"></div>
+            <div class="sales-last-time" id="salesLastTime"></div>
+          </div>
+
+          <div class="action-grid">
+            <button class="action-card accent" id="btnStartPolling" onclick="startPolling()">
+              <span class="action-card-icon">📡</span>
+              <span class="action-card-label">Iniciar polling</span>
+              <span class="action-card-sub">Esperar confirmación de pago</span>
+            </button>
+            <button class="action-card danger" id="btnStopPolling" onclick="stopPolling()">
+              <span class="action-card-icon">⏹️</span>
+              <span class="action-card-label">Detener polling</span>
+              <span class="action-card-sub">Deja de consultar el estado</span>
+            </button>
+          </div>
+        </section>
+
         <!-- ─── Control ─── -->
         <section class="block">
           <div class="block-header">
@@ -130,55 +173,13 @@
           </div>
         </section>
 
-        <section class="block">
-          <div class="block-header">
-            <span class="block-icon">💳</span>
-            <span class="block-title">Pago QR</span>
-          </div>
-
-          <!-- Estado visual del polling (sincronizado con la app) -->
-          <div class="polling-status-card" id="pollingStatusCard" data-phase="idle">
-            <div class="polling-status-row">
-              <span class="polling-dot" id="pollingDot"></span>
-              <div class="polling-status-text">
-                <span class="polling-status-label" id="pollingStatusLabel">Polling detenido</span>
-                <span class="polling-status-detail" id="pollingStatusDetail">Conecta y muestra un producto</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Contador de ventas -->
-          <div class="sales-counter-card" id="salesCounterCard">
-            <div class="sales-counter-row">
-              <span class="sales-counter-icon">🛒</span>
-              <span class="sales-counter-number" id="salesCounterNumber">0</span>
-              <span class="sales-counter-label">ventas</span>
-              <span class="sales-counter-amount" id="salesCounterAmount">Bs 0.00</span>
-            </div>
-            <div class="sales-by-product" id="salesByProduct"></div>
-            <div class="sales-last-time" id="salesLastTime"></div>
-          </div>
-
-          <div class="action-grid">
-            <button class="action-card accent" id="btnStartPolling" onclick="startPolling()">
-              <span class="action-card-icon">📡</span>
-              <span class="action-card-label">Iniciar polling</span>
-              <span class="action-card-sub">Esperar confirmación de pago</span>
-            </button>
-            <button class="action-card danger" id="btnStopPolling" onclick="stopPolling()">
-              <span class="action-card-icon">⏹️</span>
-              <span class="action-card-label">Detener polling</span>
-              <span class="action-card-sub">Deja de consultar el estado</span>
-            </button>
-          </div>
-        </section>
 
         <!-- ─── Audios ─── -->
 
         <section class="block">
          <div class="block-header">
             <span class="block-icon">🔊</span>
-            <span class="block-title">Saludos</span>
+            <span class="block-title">Saludos e Interacciones</span>
         </div>
         <div class="action-grid cols-3">
             <button class="action-card" onclick="quickPlay('audio/hello.wav', 'audio/hello.wav')">
@@ -190,15 +191,49 @@
               <span class="action-card-icon">👋</span>
               <span class="action-card-label">Hola Me llamo Robot Mesero ¿Tú cómo te llamas?</span>
             </button>
+            <button class="action-card" onclick="quickPlay('audio/switch_product.wav', 'audio/switch_product.wav')">
+              <span class="action-card-icon">�</span>
+              <span class="action-card-label">Cambiar de producto</span>
+            </button>
            
           </div>
         </section>
         <section class="block">
-         <div class="block-header">
+          <div class="block-header">
             <span class="block-icon">🔊</span>
             <span class="block-title">Alertas</span>
-        </div>
-        <div class="action-grid cols-3">
+          </div>
+
+          <!-- Toggle + Select para más alertas -->
+          <div class="alertas-extra">
+            <label class="toggle-switch">
+              <input type="checkbox" id="alertasToggle" onchange="toggleAlertasSelect()">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="alertas-extra-label">Sirenas</span>
+          </div>
+
+          <div id="alertasPanel" class="audio-custom" style="display:none">
+            <div class="audio-custom-row">
+              <select id="alertasDropdown" class="alertas-select">
+                <option value="">-- Seleccionar sirena --</option>
+                <option value="audio/alert_siren.mp3">🚨 Sirena de alerta</option>
+                <option value="audio/bocina_car.mp3">🚗 Bocina de carro</option>
+                <option value="audio/policy_siren.mp3">🚔 Sirena de policía</option>
+                <!-- <option value="audio/attention_excuse_me.wav">⚠️ Atención, con permiso</option>
+                <option value="audio/attention_with_service.wav">🤖 Robot en servicio</option>
+                <option value="audio/please_return_prod.wav">↩️ Devolver producto</option>
+                <option value="audio/help_chairs.wav">🪑 Ayuda con sillas</option>
+                <option value="audio/presentation.wav">📢 Presentación</option> -->
+              </select>
+            </div>
+            <div class="audio-custom-row split">
+              <input type="number" id="alertasVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
+              <button class="btn-play" onclick="playAlertAudio()">▶️</button>
+            </div>
+          </div>
+
+          <div class="action-grid cols-3">
             <button class="action-card" data-audio="/play-attention">
               <span class="action-card-icon">⚠️</span>
               <span class="action-card-label">Atención, con permiso con favor</span>
@@ -207,6 +242,11 @@
             <button class="action-card" onclick="quickPlay('audio/attention_with_service.wav', 'audio/attention_with_service.wav')">
               <span class="action-card-icon">⚠️</span>
               <span class="action-card-label">¡Con permiso por favor! Robot Mesero en servicio</span>
+            </button>
+
+            <button class="action-card" onclick="quickPlay('audio/please_return_prod.wav', 'audio/please_return_prod.wav')">
+              <span class="action-card-icon">⚠️</span>
+              <span class="action-card-label">Por favor, devuelve el producto a la bandeja</span>
             </button>
            
           </div>
