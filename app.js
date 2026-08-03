@@ -37,7 +37,8 @@ const AUDIO_LABELS = {
   'attention_with_service.wav': '¡Con permiso por favor! Robot Mesero en servicio',
 
   'please_return_prod.wav':       'Por favor, devuelve el producto a la bandeja',
-  'switch_product.wav':           'Con un solo dedo puedes deslizar hacia la derecha o izquierda para cambiar de producto'
+  'switch_product.wav':           'Con un solo dedo puedes deslizar hacia la derecha o izquierda para cambiar de producto',
+  'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar con QR" para continuar con el pago',
 };
 
 // ── Helpers ──
