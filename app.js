@@ -64,7 +64,7 @@ function updateMesero2Visibility() {
   const btn = document.getElementById('btn-order-mesero2');
   const btnMesero1 = document.getElementById('btn-order-mesero1');
   if (btn && select) {
-    const isMesero2 = select.value.includes('localhost');
+    const isMesero2 = select.value.includes('100.105.14.4');
     btn.style.display = isMesero2 ? '' : 'none';
     btnMesero1.style.display = isMesero2 ? 'none' : '';
   }
