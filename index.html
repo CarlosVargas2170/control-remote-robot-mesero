@@ -10,7 +10,6 @@
 </head>
 <body>
   <div class="app">
-
     <!-- ═══ HEADER + CONEXIÓN ═══ -->
     <header class="header">
       <div class="header-row">
@@ -29,7 +28,7 @@
           <span class="url-icon">🔌</span>
           <select id="baseUrl">
             <option value="http://100.99.244.72:5050">Mesero 1</option>
-            <option value="http://100.105.14.4:8080">Mesero 2</option>
+            <option value="http://localhost:5050">Mesero 2</option>
             <option value="http://localhost:5050">Local</option>
           </select>
         </div>
@@ -281,9 +280,14 @@
               <span class="action-card-icon">🛒</span>
               <span class="action-card-label">Si compras un café, te lo traigo enseguida</span>
             </button>
-            <button class="action-card" data-audio="/play-order">
+            <button class="action-card" data-audio="/play-order" id="btn-order-mesero1">
               <span class="action-card-icon">🔔</span>
               <span class="action-card-label">Tengo un pedido, ¿Lo puedes revisar?, son los que dicen Robot Mesero</span>
+            </button>
+
+            <button class="action-card" id="btn-order-mesero2" onclick="quickPlay('audio/there_is_an_order_2.mp3', 'audio/there_is_an_order_2.mp3')"style="display:none">
+              <span class="action-card-icon">🔔</span>
+              <span class="action-card-label">[Mesero 2] Tengo un pedido, ¿Lo puedes revisar?</span>
             </button>
 
             <button class="action-card" data-audio="/play-collect-tray">

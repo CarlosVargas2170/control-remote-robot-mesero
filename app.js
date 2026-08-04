@@ -16,6 +16,7 @@ const AUDIO_MAP = {
   '/play-attention':    'audio/attention_excuse_me.wav',
   '/play-collect-tray': 'audio/collect_tray.wav',
   '/play-coffee':       'audio/here_is_coffee.wav',
+  '/play-order-2':      'audio/there_is_an_order_2.mp3',
 };
 
 // Etiquetas legibles para el badge visual
@@ -39,6 +40,7 @@ const AUDIO_LABELS = {
   'please_return_prod.wav':       'Por favor, devuelve el producto a la bandeja',
   'switch_product.wav':           'Con un solo dedo puedes deslizar hacia la derecha o izquierda para cambiar de producto',
   'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar con QR" para continuar con el pago',
+  'there_is_an_order_2.mp3':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 2',
 };
 
 // ── Helpers ──
@@ -54,6 +56,18 @@ function getBaseUrl() {
 function loadSavedUrl() {
   const saved = localStorage.getItem(LS_KEY_URL);
   if (saved) document.getElementById('baseUrl').value = saved;
+}
+
+/** Muestra u oculta el botón exclusivo de Mesero 2 según el servidor seleccionado. */
+function updateMesero2Visibility() {
+  const select = document.getElementById('baseUrl');
+  const btn = document.getElementById('btn-order-mesero2');
+  const btnMesero1 = document.getElementById('btn-order-mesero1');
+  if (btn && select) {
+    const isMesero2 = select.value.includes('localhost');
+    btn.style.display = isMesero2 ? '' : 'none';
+    btnMesero1.style.display = isMesero2 ? 'none' : '';
+  }
 }
 
 function log(message, type = 'info') {
@@ -828,6 +842,8 @@ function escHtml(str) {
 window.addEventListener('DOMContentLoaded', () => {
   loadSavedUrl();
   bindAudioButtons();
+  updateMesero2Visibility();
+  document.getElementById('baseUrl').addEventListener('change', updateMesero2Visibility);
   updatePollingStatusUI({
     phase: 'idle',
     isPolling: false,
