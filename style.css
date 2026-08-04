@@ -113,7 +113,8 @@ html, body {
 
 .url-icon { font-size: 12px; margin-right: 6px; opacity: 0.5; }
 
-.url-input-wrap input[type="text"] {
+.url-input-wrap input[type="text"],
+.url-input-wrap select {
   flex: 1;
   background: transparent;
   border: none;
@@ -124,7 +125,14 @@ html, body {
   min-width: 0;
 }
 
-.url-input-wrap input:focus { outline: none; }
+.url-input-wrap input:focus,
+.url-input-wrap select:focus { outline: none; }
+
+/* Estilo del menú desplegable del select */
+.url-input-wrap select option {
+  background: #161b22;
+  color: var(--text);
+}
 
 .btn-connect {
   padding: 8px 14px;

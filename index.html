@@ -27,7 +27,11 @@
       <div class="url-bar">
         <div class="url-input-wrap">
           <span class="url-icon">🔌</span>
-          <input type="text" id="baseUrl" placeholder="http://IP_DEL_ROBOT:8080" value="http://100.99.244.72:5050">
+          <select id="baseUrl">
+            <option value="http://100.99.244.72:5050">Mesero 1</option>
+            <option value="http://100.105.14.4:8080">Mesero 2</option>
+            <option value="http://localhost:5050">Local</option>
+          </select>
         </div>
         <button class="btn-connect" onclick="testConnection()">Conectar</button>
       </div>
@@ -75,7 +79,7 @@
             <div class="sales-last-time" id="salesLastTime"></div>
           </div>
 
-          <div class="action-grid">
+          <!-- <div class="action-grid">
             <button class="action-card accent" id="btnStartPolling" onclick="startPolling()">
               <span class="action-card-icon">📡</span>
               <span class="action-card-label">Iniciar polling</span>
@@ -86,7 +90,7 @@
               <span class="action-card-label">Detener polling</span>
               <span class="action-card-sub">Deja de consultar el estado</span>
             </button>
-          </div>
+          </div> -->
         </section>
 
         <!-- ─── Control ─── -->
