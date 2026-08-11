@@ -532,8 +532,8 @@ async function sendConsoleText() {
 }
 
 /**
- * Envía el texto del textarea al servicio de síntesis de voz (TTS)
- * y reproduce el audio resultante.
+ * Envía el texto del textarea al servicio de síntesis de voz (TTS).
+ * El audio devuelto no se reproduce en esta interfaz.
  */
 async function sendToServiceVoice() {
   const textarea = document.getElementById('textInput');
@@ -549,7 +549,7 @@ async function sendToServiceVoice() {
     return;
   }
 
-  log(`Sintetizando voz: "${text}"`, 'info');
+  log(`Enviando texto al servicio TTS: "${text}"`, 'info');
 
   const baseUrl = getBaseUrl();
   const host = new URL(baseUrl).hostname;
@@ -577,26 +577,9 @@ async function sendToServiceVoice() {
       return;
     }
 
-    // Reproducir el audio recibido
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    stopLocal();
-    const audio = new Audio(url);
-    _currentLocalAudio = audio;
-
-    const fileName = `TTS: ${text.slice(0, 30)}...`;
-    showAudioBadge(fileName);
-    audio.addEventListener('ended', () => {
-      hideAudioBadge();
-      URL.revokeObjectURL(url);
-    });
-    audio.addEventListener('error', () => {
-      hideAudioBadge();
-      URL.revokeObjectURL(url);
-    });
-
-    await audio.play();
-    log('Voz sintetizada y reproducida', 'ok');
+    // El endpoint devuelve audio, pero esta interfaz no lo reproduce.
+    await res.arrayBuffer();
+    log('Texto enviado al servicio TTS correctamente', 'ok');
     textarea.value = '';
   } catch (err) {
     log(`ERR TTS: ${err.message}`, 'err');
