@@ -41,6 +41,8 @@ const AUDIO_LABELS = {
   'switch_product.wav':           'Con un solo dedo puedes deslizar hacia la derecha o izquierda para cambiar de producto',
   'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar con QR" para continuar con el pago',
   'there_is_an_order_2.mp3':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 2',
+
+  'order_to_retire_tray.mp3':     'Por favor, ¿me puedes retirar las bandejas?'
 };
 
 // ── Helpers ──

@@ -144,6 +144,11 @@
               <span class="action-card-label">Confundido</span>
               <span class="action-card-sub">Cara confundida</span>
             </button>
+            <button class="action-card" onclick="setEmotion('confused')">
+              <span class="action-card-icon">😕</span>
+              <span class="action-card-label">Confundido</span>
+              <span class="action-card-sub">Cara confundida</span>
+            </button>
             <!-- <button class="action-card" onclick="callEndpoint('POST','/proximity/away')">
               <span class="action-card-icon">🚶</span>
               <span class="action-card-label">Lejos</span>
@@ -306,6 +311,10 @@
             <button class="action-card danger" onclick="stopLocal(); callEndpoint('POST','/audio/stop')">
               <span class="action-card-icon">🔇</span>
               <span class="action-card-label">Detener</span>
+            </button>
+            <button class="action-card danger" onclick="quickPlay('audio/order_to_retire_tray.mp3', 'audio/order_to_retire_tray.mp3')">
+              <span class="action-card-icon">🍽️</span>
+              <span class="action-card-label">Por favor, ¿me puedes retirar las bandejas?</span>
             </button>
           </div>
 
