@@ -427,6 +427,26 @@
 
       <!-- ─── Panel derecho: Consola (fija, siempre visible) ─── -->
       <div class="console-panel">
+        <div class="console-input-box">
+          <div class="console-input-header">
+            <span class="block-icon">🗣️</span>
+            <span class="block-title">Texto a Voz (TTS)</span>
+            <div class="tts-status" id="ttsStatus">
+              <span class="dot" id="ttsDot"></span>
+              <span id="ttsText">--</span>
+            </div>
+          </div>
+          <div class="console-input-row">
+            <textarea
+              name="textInput"
+              id="textInput"
+              rows="3"
+              placeholder="Escribe un texto para enviar al robot..."
+            ></textarea>
+            <button class="btn-play" id="btnTtsSend" onclick="sendToServiceVoice()">▶️</button>
+          </div>
+        </div>
+
         <div class="console-header">
           <div class="console-header-left">
             <span class="block-icon">📟</span>

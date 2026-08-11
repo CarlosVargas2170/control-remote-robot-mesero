@@ -99,6 +99,44 @@ function setConnectionStatus(online) {
   }
 }
 
+let _ttsOnline = false;
+
+/** Actualiza el indicador visual de disponibilidad del servicio TTS (:9000). */
+function setTtsStatus(online) {
+  _ttsOnline = online;
+  const dot = document.getElementById('ttsDot');
+  const text = document.getElementById('ttsText');
+  const btn = document.getElementById('btnTtsSend');
+  if (!dot || !text) return;
+  if (online) {
+    dot.className = 'dot online';
+    text.textContent = 'TTS Online';
+    if (btn) btn.disabled = false;
+  } else {
+    dot.className = 'dot offline';
+    text.textContent = 'TTS Offline';
+    if (btn) btn.disabled = true;
+  }
+}
+
+/** Verifica si el servicio TTS responde en http://{host}:9000. */
+async function checkTtsService() {
+  setTtsStatus(false); // por defecto, offline hasta confirmar
+  try {
+    const baseUrl = getBaseUrl();
+    const host = new URL(baseUrl).hostname;
+    const res = await fetch(`http://${host}:9000/`, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(3000),
+    });
+    setTtsStatus(true);
+    log(`Servicio TTS disponible en ${host}:9000`, 'ok');
+  } catch {
+    setTtsStatus(false);
+    log(`Servicio TTS no disponible`, 'warn');
+  }
+}
+
 // ── Audio local ──
 
 let _currentLocalAudio = null;
@@ -236,6 +274,8 @@ async function testConnection() {
     // Empezar a observar el estado de polling del robot
     startPollingStatusWatcher();
     refreshPollingStatus();
+    // Verificar también el servicio TTS
+    checkTtsService();
   } else {
     stopPollingStatusWatcher();
     updatePollingStatusUI({ phase: 'idle', isPolling: false, label: 'Sin conexión' });
@@ -459,6 +499,107 @@ async function playCustomAudio() {
   // así que el audio local sigue sonando como fallback.
   if (!result.ok) {
     log('⚠️ No se pudo reproducir en el robot. Sonando solo localmente.', 'warn');
+  }
+}
+
+/**
+ * Envía el texto del textarea de la consola como displayText al robot.
+ * Útil para enviar mensajes personalizados a la pantalla del robot.
+ */
+async function sendConsoleText() {
+  const textarea = document.getElementById('textInput');
+  const text = textarea?.value?.trim();
+
+  if (!text) {
+    log('Escribe un texto en la consola antes de enviar', 'warn');
+    return;
+  }
+
+  log(`Enviando texto: "${text}"`, 'info');
+  const result = await callEndpoint('POST', '/audio/play', {
+    asset: '',
+    volume: 0,
+    force: true,
+    displayText: text,
+  });
+
+  if (result.ok) {
+    log(`Texto enviado correctamente`, 'ok');
+    textarea.value = '';
+  } else {
+    log('⚠️ No se pudo enviar el texto al robot', 'warn');
+  }
+}
+
+/**
+ * Envía el texto del textarea al servicio de síntesis de voz (TTS)
+ * y reproduce el audio resultante.
+ */
+async function sendToServiceVoice() {
+  const textarea = document.getElementById('textInput');
+  const text = textarea?.value?.trim();
+
+  if (!text) {
+    log('Escribe un texto antes de enviar', 'warn');
+    return;
+  }
+
+  if (!_ttsOnline) {
+    log('Servicio TTS no disponible. Conecta primero.', 'warn');
+    return;
+  }
+
+  log(`Sintetizando voz: "${text}"`, 'info');
+
+  const baseUrl = getBaseUrl();
+  const host = new URL(baseUrl).hostname;
+  const TTS_URL = `http://${host}:9000/synthesize`;
+  const TTS_TOKEN = '501a8d0c5fe72d11e5af9e246548e3ec501458f61b770558813552aae7ce89e1';
+
+  try {
+    const res = await fetch(TTS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'audio/wav',
+        'Authorization': `Bearer ${TTS_TOKEN}`,
+      },
+      body: JSON.stringify({
+        text: text,
+        speaker_id: 'default',
+        language: 'es',
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      log(`ERR TTS ${res.status}: ${errText}`, 'err');
+      return;
+    }
+
+    // Reproducir el audio recibido
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    stopLocal();
+    const audio = new Audio(url);
+    _currentLocalAudio = audio;
+
+    const fileName = `TTS: ${text.slice(0, 30)}...`;
+    showAudioBadge(fileName);
+    audio.addEventListener('ended', () => {
+      hideAudioBadge();
+      URL.revokeObjectURL(url);
+    });
+    audio.addEventListener('error', () => {
+      hideAudioBadge();
+      URL.revokeObjectURL(url);
+    });
+
+    await audio.play();
+    log('Voz sintetizada y reproducida', 'ok');
+    textarea.value = '';
+  } catch (err) {
+    log(`ERR TTS: ${err.message}`, 'err');
   }
 }
 
