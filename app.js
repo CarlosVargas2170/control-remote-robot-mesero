@@ -822,6 +822,7 @@ async function playAlertAudio() {
     volume,
     force: true,
     displayText: null,
+    showOverlay: false,
   });
 
   if (!result.ok) {
