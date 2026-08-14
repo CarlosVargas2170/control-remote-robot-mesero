@@ -39,8 +39,9 @@ const AUDIO_LABELS = {
 
   'please_return_prod.wav':       'Por favor, devuelve el producto a la bandeja',
   'switch_product.wav':           'Con un solo dedo puedes deslizar hacia la derecha o izquierda para cambiar de producto',
-  'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar con QR" para continuar con el pago',
+  'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar pedido con QR" para continuar con el pago',
   'there_is_an_order_2.mp3':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 2',
+  'dance_to_sell.wav':               'Si me compras un café, te hago un baile',
 };
 
 // ── Helpers ──
