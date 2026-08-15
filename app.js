@@ -120,21 +120,34 @@ function setTtsStatus(online) {
   }
 }
 
-/** Verifica si el servicio TTS responde en http://{host}:9000. */
+/** Verifica la salud del servicio TTS en http://{host}:9000/health. */
 async function checkTtsService() {
   setTtsStatus(false); // por defecto, offline hasta confirmar
   try {
     const baseUrl = getBaseUrl();
     const host = new URL(baseUrl).hostname;
-    const res = await fetch(`http://${host}:9000/`, {
-      method: 'HEAD',
+    const res = await fetch(`http://${host}:9000/health`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
       signal: AbortSignal.timeout(3000),
     });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const health = await res.json();
+    if (health.status !== 'ok') {
+      throw new Error(`Estado inesperado: ${health.status ?? 'desconocido'}`);
+    }
+
     setTtsStatus(true);
-    log(`Servicio TTS disponible en ${host}:9000`, 'ok');
-  } catch {
+    const gpuStatus = health.gpu ? 'GPU activa' : 'sin GPU';
+    const speakers = health.speakers_loaded ?? 0;
+    log(`Servicio TTS disponible en ${host}:9000 (${gpuStatus}, speakers: ${speakers})`, 'ok');
+  } catch (err) {
     setTtsStatus(false);
-    log(`Servicio TTS no disponible`, 'warn');
+    log(`Servicio TTS no disponible: ${err.message}`, 'warn');
   }
 }
 
@@ -503,42 +516,91 @@ async function playCustomAudio() {
   }
 }
 
-/**
- * Envía el texto del textarea de la consola como displayText al robot.
- * Útil para enviar mensajes personalizados a la pantalla del robot.
- */
+/** Alias conservado para enviar el texto exclusivamente al servicio TTS. */
 async function sendConsoleText() {
-  const textarea = document.getElementById('textInput');
-  const text = textarea?.value?.trim();
+  // La llamada a /audio/play de mini-app-qr queda desactivada.
+  // Todo texto se envía exclusivamente al servicio TTS.
+  return sendToServiceVoice();
+}
 
-  if (!text) {
-    log('Escribe un texto en la consola antes de enviar', 'warn');
-    return;
+const TTS_SAMPLE_RATE = 24000;
+const TTS_PREBUFFER_SECONDS = 0.15;
+
+function concatBytes(first, second) {
+  const result = new Uint8Array(first.length + second.length);
+  result.set(first, 0);
+  result.set(second, first.length);
+  return result;
+}
+
+/** Reproduce un stream PCM float32 little-endian, mono, a 24000 Hz. */
+async function playTtsStream(response, audioContext) {
+  if (!response.body) {
+    throw new Error('El navegador no soporta streaming para esta respuesta');
   }
+  const reader = response.body.getReader();
+  let nextStartTime = audioContext.currentTime + TTS_PREBUFFER_SECONDS;
+  let leftoverBytes = new Uint8Array(0);
 
-  log(`Enviando texto: "${text}"`, 'info');
-  const result = await callEndpoint('POST', '/audio/play', {
-    asset: '',
-    volume: 0,
-    force: true,
-    displayText: text,
-  });
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value?.length) continue;
 
-  if (result.ok) {
-    log(`Texto enviado correctamente`, 'ok');
-    textarea.value = '';
-  } else {
-    log('⚠️ No se pudo enviar el texto al robot', 'warn');
+      // Una muestra float32 ocupa 4 bytes. Se conserva cualquier resto para
+      // unirlo con el siguiente chunk del stream.
+      const combined = concatBytes(leftoverBytes, value);
+      const usableLength = combined.length - (combined.length % 4);
+      leftoverBytes = combined.slice(usableLength);
+
+      if (usableLength === 0) continue;
+
+      const samples = new Float32Array(
+        combined.buffer,
+        combined.byteOffset,
+        usableLength / 4,
+      );
+      const audioBuffer = audioContext.createBuffer(
+        1,
+        samples.length,
+        TTS_SAMPLE_RATE,
+      );
+      audioBuffer.copyToChannel(samples, 0);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+
+      const startTime = Math.max(nextStartTime, audioContext.currentTime);
+      source.start(startTime);
+      nextStartTime = startTime + audioBuffer.duration;
+    }
+
+    if (leftoverBytes.length > 0) {
+      log(`TTS: se descartaron ${leftoverBytes.length} bytes incompletos`, 'warn');
+    }
+
+    // El stream ya terminó, pero pueden quedar chunks programados sonando.
+    const remainingMs = Math.max(
+      0,
+      (nextStartTime - audioContext.currentTime) * 1000,
+    );
+    await new Promise(resolve => window.setTimeout(resolve, remainingMs));
+  } finally {
+    reader.releaseLock();
+    await audioContext.close();
   }
 }
 
 /**
  * Envía el texto del textarea al servicio de síntesis de voz (TTS).
- * El audio devuelto no se reproduce en esta interfaz.
+ * Reproduce en el navegador el stream PCM devuelto por el servicio.
  */
 async function sendToServiceVoice() {
   const textarea = document.getElementById('textInput');
   const text = textarea?.value?.trim();
+  let audioContext = null;
 
   if (!text) {
     log('Escribe un texto antes de enviar', 'warn');
@@ -550,7 +612,27 @@ async function sendToServiceVoice() {
     return;
   }
 
+  // Debe crearse y activarse durante el clic del usuario. Si se crea después
+  // del fetch, Chrome puede bloquearlo por su política de autoplay.
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    log('Web Audio API no está disponible en este navegador', 'err');
+    return;
+  }
+
+  audioContext = new AudioContextClass();
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume();
+  }
+
+  if (audioContext.state !== 'running') {
+    await audioContext.close();
+    log(`No se pudo activar el audio del navegador (${audioContext.state})`, 'err');
+    return;
+  }
+
   log(`Enviando texto al servicio TTS: "${text}"`, 'info');
+  log(`Audio del navegador activo a ${audioContext.sampleRate} Hz`, 'info');
 
   const baseUrl = getBaseUrl();
   const host = new URL(baseUrl).hostname;
@@ -562,7 +644,7 @@ async function sendToServiceVoice() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'audio/wav',
+        'Accept': 'application/octet-stream',
         'Authorization': `Bearer ${TTS_TOKEN}`,
       },
       body: JSON.stringify({
@@ -578,12 +660,15 @@ async function sendToServiceVoice() {
       return;
     }
 
-    // El endpoint devuelve audio, pero esta interfaz no lo reproduce.
-    await res.arrayBuffer();
-    log('Texto enviado al servicio TTS correctamente', 'ok');
+    await playTtsStream(res, audioContext);
+    log('Texto enviado y audio TTS reproducido correctamente', 'ok');
     textarea.value = '';
   } catch (err) {
     log(`ERR TTS: ${err.message}`, 'err');
+  } finally {
+    if (audioContext && audioContext.state !== 'closed') {
+      await audioContext.close();
+    }
   }
 }
 
