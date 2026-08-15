@@ -192,6 +192,72 @@ html, body {
   gap: 6px;
 }
 
+/* ─── Consola: input de texto ─── */
+.console-input-box {
+  padding: 6px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.console-input-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.tts-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.console-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.console-input-row textarea {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 7px 10px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 60px;
+  max-height: 150px;
+  transition: border-color 0.2s;
+}
+
+.console-input-row textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.console-input-row textarea::placeholder {
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.console-input-row .btn-play {
+  align-self: flex-end;
+  padding: 7px 12px;
+  margin-bottom: 0;
+}
+
 /* ═══ BLOCKS (secciones) ═══ */
 .block {
   margin-bottom: 12px;
