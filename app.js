@@ -119,21 +119,34 @@ function setTtsStatus(online) {
   }
 }
 
-/** Verifica si el servicio TTS responde en http://{host}:9000. */
+/** Verifica la salud del servicio TTS en http://{host}:9000/health. */
 async function checkTtsService() {
   setTtsStatus(false); // por defecto, offline hasta confirmar
   try {
     const baseUrl = getBaseUrl();
     const host = new URL(baseUrl).hostname;
-    const res = await fetch(`http://${host}:9000/`, {
-      method: 'HEAD',
+    const res = await fetch(`http://${host}:9000/health`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
       signal: AbortSignal.timeout(3000),
     });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const health = await res.json();
+    if (health.status !== 'ok') {
+      throw new Error(`Estado inesperado: ${health.status ?? 'desconocido'}`);
+    }
+
     setTtsStatus(true);
-    log(`Servicio TTS disponible en ${host}:9000`, 'ok');
-  } catch {
+    const gpuStatus = health.gpu ? 'GPU activa' : 'sin GPU';
+    const speakers = health.speakers_loaded ?? 0;
+    log(`Servicio TTS disponible en ${host}:9000 (${gpuStatus}, speakers: ${speakers})`, 'ok');
+  } catch (err) {
     setTtsStatus(false);
-    log(`Servicio TTS no disponible`, 'warn');
+    log(`Servicio TTS no disponible: ${err.message}`, 'warn');
   }
 }
 
@@ -502,33 +515,11 @@ async function playCustomAudio() {
   }
 }
 
-/**
- * Envía el texto del textarea de la consola como displayText al robot.
- * Útil para enviar mensajes personalizados a la pantalla del robot.
- */
+/** Alias conservado para enviar el texto exclusivamente al servicio TTS. */
 async function sendConsoleText() {
-  const textarea = document.getElementById('textInput');
-  const text = textarea?.value?.trim();
-
-  if (!text) {
-    log('Escribe un texto en la consola antes de enviar', 'warn');
-    return;
-  }
-
-  log(`Enviando texto: "${text}"`, 'info');
-  const result = await callEndpoint('POST', '/audio/play', {
-    asset: '',
-    volume: 0,
-    force: true,
-    displayText: text,
-  });
-
-  if (result.ok) {
-    log(`Texto enviado correctamente`, 'ok');
-    textarea.value = '';
-  } else {
-    log('⚠️ No se pudo enviar el texto al robot', 'warn');
-  }
+  // La llamada a /audio/play de mini-app-qr queda desactivada.
+  // Todo texto se envía exclusivamente al servicio TTS.
+  return sendToServiceVoice();
 }
 
 /**
