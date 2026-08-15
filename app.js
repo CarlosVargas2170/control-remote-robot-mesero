@@ -522,13 +522,84 @@ async function sendConsoleText() {
   return sendToServiceVoice();
 }
 
+const TTS_SAMPLE_RATE = 24000;
+const TTS_PREBUFFER_SECONDS = 0.15;
+
+function concatBytes(first, second) {
+  const result = new Uint8Array(first.length + second.length);
+  result.set(first, 0);
+  result.set(second, first.length);
+  return result;
+}
+
+/** Reproduce un stream PCM float32 little-endian, mono, a 24000 Hz. */
+async function playTtsStream(response, audioContext) {
+  if (!response.body) {
+    throw new Error('El navegador no soporta streaming para esta respuesta');
+  }
+  const reader = response.body.getReader();
+  let nextStartTime = audioContext.currentTime + TTS_PREBUFFER_SECONDS;
+  let leftoverBytes = new Uint8Array(0);
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value?.length) continue;
+
+      // Una muestra float32 ocupa 4 bytes. Se conserva cualquier resto para
+      // unirlo con el siguiente chunk del stream.
+      const combined = concatBytes(leftoverBytes, value);
+      const usableLength = combined.length - (combined.length % 4);
+      leftoverBytes = combined.slice(usableLength);
+
+      if (usableLength === 0) continue;
+
+      const samples = new Float32Array(
+        combined.buffer,
+        combined.byteOffset,
+        usableLength / 4,
+      );
+      const audioBuffer = audioContext.createBuffer(
+        1,
+        samples.length,
+        TTS_SAMPLE_RATE,
+      );
+      audioBuffer.copyToChannel(samples, 0);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+
+      const startTime = Math.max(nextStartTime, audioContext.currentTime);
+      source.start(startTime);
+      nextStartTime = startTime + audioBuffer.duration;
+    }
+
+    if (leftoverBytes.length > 0) {
+      log(`TTS: se descartaron ${leftoverBytes.length} bytes incompletos`, 'warn');
+    }
+
+    // El stream ya terminó, pero pueden quedar chunks programados sonando.
+    const remainingMs = Math.max(
+      0,
+      (nextStartTime - audioContext.currentTime) * 1000,
+    );
+    await new Promise(resolve => window.setTimeout(resolve, remainingMs));
+  } finally {
+    reader.releaseLock();
+    await audioContext.close();
+  }
+}
+
 /**
  * Envía el texto del textarea al servicio de síntesis de voz (TTS).
- * El audio devuelto no se reproduce en esta interfaz.
+ * Reproduce en el navegador el stream PCM devuelto por el servicio.
  */
 async function sendToServiceVoice() {
   const textarea = document.getElementById('textInput');
   const text = textarea?.value?.trim();
+  let audioContext = null;
 
   if (!text) {
     log('Escribe un texto antes de enviar', 'warn');
@@ -540,7 +611,27 @@ async function sendToServiceVoice() {
     return;
   }
 
+  // Debe crearse y activarse durante el clic del usuario. Si se crea después
+  // del fetch, Chrome puede bloquearlo por su política de autoplay.
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    log('Web Audio API no está disponible en este navegador', 'err');
+    return;
+  }
+
+  audioContext = new AudioContextClass();
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume();
+  }
+
+  if (audioContext.state !== 'running') {
+    await audioContext.close();
+    log(`No se pudo activar el audio del navegador (${audioContext.state})`, 'err');
+    return;
+  }
+
   log(`Enviando texto al servicio TTS: "${text}"`, 'info');
+  log(`Audio del navegador activo a ${audioContext.sampleRate} Hz`, 'info');
 
   const baseUrl = getBaseUrl();
   const host = new URL(baseUrl).hostname;
@@ -552,7 +643,7 @@ async function sendToServiceVoice() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'audio/wav',
+        'Accept': 'application/octet-stream',
         'Authorization': `Bearer ${TTS_TOKEN}`,
       },
       body: JSON.stringify({
@@ -568,12 +659,15 @@ async function sendToServiceVoice() {
       return;
     }
 
-    // El endpoint devuelve audio, pero esta interfaz no lo reproduce.
-    await res.arrayBuffer();
-    log('Texto enviado al servicio TTS correctamente', 'ok');
+    await playTtsStream(res, audioContext);
+    log('Texto enviado y audio TTS reproducido correctamente', 'ok');
     textarea.value = '';
   } catch (err) {
     log(`ERR TTS: ${err.message}`, 'err');
+  } finally {
+    if (audioContext && audioContext.state !== 'closed') {
+      await audioContext.close();
+    }
   }
 }
 
