@@ -553,7 +553,7 @@ async function sendToServiceVoice() {
 
   const baseUrl = getBaseUrl();
   const host = new URL(baseUrl).hostname;
-  const TTS_URL = `http://${host}:9000/synthesize`;
+  const TTS_URL = `http://${host}:9000/synthesize/play`;
   const TTS_TOKEN = '501a8d0c5fe72d11e5af9e246548e3ec501458f61b770558813552aae7ce89e1';
 
   try {
