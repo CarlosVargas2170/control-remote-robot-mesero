@@ -787,12 +787,19 @@ function renderMerchantList(merchants) {
   }).join('');
 
   container.innerHTML = `
-    <label class="merchant-select-label" for="merchantSelect">Comercio habilitado</label>
-    <select id="merchantSelect" class="merchant-select" onchange="toggleMerchant(this.value, this)" ${_isToggling ? 'disabled' : ''}>
-      ${options}
-    </select>
+    <div class="merchant-picker">
+      <span class="merchant-picker-icon" aria-hidden="true">🏪</span>
+      <div class="merchant-picker-body">
+        <label class="merchant-select-label" for="merchantSelect">Comercio habilitado</label>
+        <div class="merchant-select-wrap">
+          <select id="merchantSelect" class="merchant-select" onchange="toggleMerchant(this.value, this)" ${_isToggling ? 'disabled' : ''}>
+            ${options}
+          </select>
+        </div>
+      </div>
+    </div>
     <div class="merchant-selection-status">
-      ${selected ? `${selected.visibleCount ?? 0}/${selected.productCount ?? selected.products?.length ?? 0} productos visibles` : ''}
+      ${selected ? `<span class="merchant-status-dot"></span><strong>${selected.visibleCount ?? 0}</strong> de ${selected.productCount ?? selected.products?.length ?? 0} productos visibles` : ''}
     </div>`;
 }
 
