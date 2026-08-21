@@ -222,7 +222,6 @@ async function setEmotion(emotion) {
 
 async function callEndpoint(method, path, body = null, localAudioFile = null) {
   const baseUrl = getBaseUrl();
-  console.log(path)
   const url = `${baseUrl}${path}`;
   log(`${method} ${path} ...`, 'info');
 
@@ -467,9 +466,7 @@ async function quickPlay(assetPath, localPath) {
 
   // Extraer nombre del archivo para el displayText en el robot.
   const fileName = localPath.includes('/') ? localPath.split('/').pop() : localPath;
-  console.log("nombre del archivo: "+fileName)
   const displayText = AUDIO_LABELS[fileName] || null;
-  console.log("texto del audio: "+displayText)
 
   // Enviar al robot
   const result = await callEndpoint('POST', '/audio/play', {
@@ -713,11 +710,18 @@ let _currentFilterMode = 'all';
 let _isToggling = false;
 /** Merchant seleccionado actualmente en el menu desplegable. */
 let _selectedMerchantId = null;
+/** IDs de productos con cambios locales aun no enviados. */
+const _pendingProductIds = new Set();
 
 /**
  * Carga la lista de productos desde GET /products y renderiza la UI.
  */
 async function loadMerchantsAndProducts() {
+  if (_pendingProductIds.size > 0 && !_isToggling) {
+    log('Guarda los filtros pendientes antes de volver a cargar productos.', 'warn');
+    return;
+  }
+
   const merchantContainer = document.getElementById('merchantList');
   const productContainer = document.getElementById('productList');
   if (merchantContainer) merchantContainer.innerHTML = '<p class="hint-text">Cargando merchants...</p>';
@@ -727,6 +731,7 @@ async function loadMerchantsAndProducts() {
 
   if (!result.ok) {
     _productState = null;
+    _pendingProductIds.clear();
     if (merchantContainer) merchantContainer.innerHTML = '<p class="hint-text error-text">Error al cargar merchants</p>';
     if (productContainer) productContainer.innerHTML = '<p class="hint-text error-text">Error al cargar productos</p>';
     updateHeaderCount(0, 0);
@@ -736,6 +741,7 @@ async function loadMerchantsAndProducts() {
   const data = result.data;
   if (!data.cacheLoaded || !data.data) {
     _productState = null;
+    _pendingProductIds.clear();
     if (merchantContainer) merchantContainer.innerHTML = '<p class="hint-text">No hay productos cargados. Pulsa Conectar cuando la app este iniciada.</p>';
     if (productContainer) productContainer.innerHTML = '<p class="hint-text">Carga productos primero</p>';
     updateHeaderCount(0, 0);
@@ -743,6 +749,7 @@ async function loadMerchantsAndProducts() {
   }
 
   _productState = data.data;
+  _pendingProductIds.clear();
   _currentFilterMode = _productState.filterMode || 'all';
   const merchants = Array.isArray(_productState.merchants) ? _productState.merchants : [];
   const selectedStillExists = merchants.some(m => String(m.merchantId) === _selectedMerchantId);
@@ -843,9 +850,31 @@ function renderProductList(merchants) {
 
   html += `
     <div style="display:flex;gap:4px;margin-top:8px">
-      <button class="btn-sm success" style="flex:1" onclick="saveFilters()">Guardar filtros</button>
+      <button id="btnSaveFilters" class="btn-sm success" style="flex:1" onclick="saveFilters()" ${_pendingProductIds.size === 0 || _isToggling ? 'disabled' : ''}>
+        ${_pendingProductIds.size > 0 ? `Guardar filtros (${_pendingProductIds.size})` : 'Sin cambios pendientes'}
+      </button>
     </div>`;
   container.innerHTML = html;
+}
+
+/** Retorna el merchant que se esta editando actualmente. */
+function getSelectedMerchant() {
+  const merchants = Array.isArray(_productState?.merchants) ? _productState.merchants : [];
+  return merchants.find(m => String(m.merchantId) === _selectedMerchantId) ?? null;
+}
+
+/** Recalcula contadores y vuelve a pintar el borrador local de productos. */
+function renderPendingProductChanges() {
+  const merchant = getSelectedMerchant();
+  if (!merchant) return;
+
+  merchant.productCount = merchant.products?.length ?? 0;
+  merchant.visibleCount = merchant.products?.filter(p => p.visible).length ?? 0;
+  _currentFilterMode = 'blacklist';
+  updateFilterModeButtons();
+  renderMerchantList(_productState.merchants);
+  renderProductList(_productState.merchants);
+  updateHeaderCount(merchant.productCount, merchant.visibleCount);
 }
 
 /** Actualiza el contador en el header de Productos. */
@@ -858,6 +887,11 @@ function updateHeaderCount(total, visible) {
 async function toggleMerchant(merchantId, select) {
   if (_isToggling || !_productState) {
     if (select) select.value = _selectedMerchantId ?? '';
+    return;
+  }
+  if (_pendingProductIds.size > 0) {
+    if (select) select.value = _selectedMerchantId ?? '';
+    log('Guarda los filtros pendientes antes de cambiar de merchant.', 'warn');
     return;
   }
 
@@ -899,53 +933,44 @@ async function toggleMerchant(merchantId, select) {
   if (currentSelect) currentSelect.disabled = false;
 }
 
-/** Muestra/oculta un producto con loading state y auto-refresh. */
-async function toggleProduct(productId, checkbox) {
+/** Actualiza localmente la visibilidad; Guardar filtros envia todos los cambios. */
+function toggleProduct(productId, checkbox) {
   if (_isToggling) { checkbox.checked = !checkbox.checked; return; }
-  _isToggling = true;
-  const visible = checkbox.checked;
-
-  const result = await callEndpoint('POST', '/products/filter', {
-    products: { [String(productId)]: { visible } },
-    reload: true
-  });
-
-  if (result.ok) {
-    log(`Producto ${productId}: ${visible ? 'visible' : 'oculto'}`, 'ok');
-    setTimeout(() => loadMerchantsAndProducts(), 800);
-  } else {
-    checkbox.checked = !visible;
-    log(`ERR: No se pudo ${visible ? 'mostrar' : 'ocultar'} producto ${productId}`, 'err');
+  const merchant = getSelectedMerchant();
+  const product = merchant?.products?.find(p => String(p.id) === String(productId));
+  if (!product) {
+    checkbox.checked = !checkbox.checked;
+    return;
   }
-  _isToggling = false;
+
+  product.visible = checkbox.checked;
+  if (!product.visible) product.pinned = false;
+  _pendingProductIds.add(String(productId));
+  log(`Producto ${productId}: cambio pendiente (${product.visible ? 'visible' : 'oculto'})`, 'info');
+  renderPendingProductChanges();
 }
 
-/** Fija/desfija un producto con loading state y auto-refresh. */
-async function togglePinProduct(productId, pinned, btn) {
+/** Actualiza localmente el fijado; Guardar filtros envia todos los cambios. */
+function togglePinProduct(productId, pinned, btn) {
   if (_isToggling) return;
-  _isToggling = true;
+  const merchant = getSelectedMerchant();
+  const product = merchant?.products?.find(p => String(p.id) === String(productId));
+  if (!product) return;
 
-  if (btn) btn.style.opacity = '0.5';
-
-  const result = await callEndpoint('POST', '/products/filter', {
-    products: { [String(productId)]: { pinned } },
-    reload: true
-  });
-
-  if (btn) btn.style.opacity = '';
-
-  if (result.ok) {
-    log(`Producto ${productId}: ${pinned ? 'fijado' : 'desfijado'}`, 'ok');
-    setTimeout(() => loadMerchantsAndProducts(), 800);
-  } else {
-    log(`ERR: No se pudo ${pinned ? 'fijar' : 'desfijar'} producto ${productId}`, 'err');
-  }
-  _isToggling = false;
+  product.pinned = pinned;
+  if (pinned) product.visible = true;
+  _pendingProductIds.add(String(productId));
+  log(`Producto ${productId}: cambio pendiente (${pinned ? 'fijado' : 'desfijado'})`, 'info');
+  renderPendingProductChanges();
 }
 
 /** Cambia el modo de filtro con loading state y auto-refresh. */
 async function setFilterMode(mode) {
   if (_isToggling) return;
+  if (_pendingProductIds.size > 0) {
+    log('Guarda los filtros pendientes antes de cambiar el modo.', 'warn');
+    return;
+  }
   _isToggling = true;
   _currentFilterMode = mode;
   updateFilterModeButtons();
@@ -972,16 +997,61 @@ function updateFilterModeButtons() {
   });
 }
 
-/** Guarda los filtros actuales en disco (persistencia). */
+/** Envia en una sola peticion el estado de todos los productos seleccionados. */
 async function saveFilters() {
-  if (!_productState) {
+  if (_isToggling || !_productState) {
     log('No hay productos cargados', 'warn');
     return;
   }
-  // La config ya se persiste al hacer POST /products/filter con reload:true
-  // Este boton es para feedback visual
-  log('Filtros guardados en la app.', 'ok');
-  loadMerchantsAndProducts();
+  if (_pendingProductIds.size === 0) {
+    log('No hay cambios de productos pendientes.', 'info');
+    return;
+  }
+
+  const merchant = getSelectedMerchant();
+  if (!merchant?.products?.length) {
+    log('El merchant seleccionado no tiene productos.', 'warn');
+    return;
+  }
+
+  const products = {};
+  for (const product of merchant.products) {
+    products[String(product.id)] = {
+      visible: product.visible === true,
+      pinned: product.pinned === true
+    };
+  }
+
+  _isToggling = true;
+  const saveButton = document.getElementById('btnSaveFilters');
+  const merchantSelect = document.getElementById('merchantSelect');
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = 'Guardando...';
+  }
+  if (merchantSelect) merchantSelect.disabled = true;
+
+  log(`Guardando ${_pendingProductIds.size} cambio(s) de productos...`, 'info');
+  const result = await callEndpoint('POST', '/products/filter', {
+    products,
+    filterMode: 'blacklist',
+    reload: true
+  });
+
+  if (result.ok) {
+    _pendingProductIds.clear();
+    _currentFilterMode = 'blacklist';
+    log('Filtros de productos aplicados correctamente.', 'ok');
+    await new Promise(resolve => setTimeout(resolve, 800));
+    await loadMerchantsAndProducts();
+  } else {
+    log('ERR: No se pudieron guardar los filtros de productos.', 'err');
+  }
+
+  _isToggling = false;
+  const currentSelect = document.getElementById('merchantSelect');
+  if (currentSelect) currentSelect.disabled = false;
+  if (!result.ok) renderPendingProductChanges();
 }
 
 /** Agrega un nuevo merchant ID a la configuracion. */
@@ -1018,6 +1088,10 @@ async function removeMerchant(merchantId) {
 /** Fuerza la recarga de productos desde la API del backend. */
 async function reloadProducts() {
   if (_isToggling) return;
+  if (_pendingProductIds.size > 0) {
+    log('Guarda los filtros pendientes antes de recargar productos.', 'warn');
+    return;
+  }
   _isToggling = true;
 
   // Buscar todos los botones de recargar y mostrar loading
