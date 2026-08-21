@@ -649,6 +649,31 @@ html, body {
   text-align: center;
   padding: 12px 0;
 }
+.hint-text.error-text { color: var(--red); }
+
+/* ── Merchant select ── */
+.merchant-select-label {
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+}
+.merchant-select {
+  width: 100%;
+  padding: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+}
+.merchant-select:focus { outline: none; border-color: var(--accent); }
+.merchant-select:disabled { cursor: wait; opacity: 0.6; }
+.merchant-select option { background: var(--surface); color: var(--text); }
+.merchant-selection-status {
+  color: var(--text-dim);
+  font-size: 10px;
+}
 
 /* ── Small button ── */
 .btn-sm {
