@@ -315,6 +315,7 @@ async function testConnection() {
     _selectedMerchantId = null;
     _productState = null;
     _pendingProductIds.clear();
+    updateMerchantAudioSections();
     await loadMerchantsAndProducts();
     // Empezar a observar el estado de polling del robot
     startPollingStatusWatcher();
@@ -809,8 +810,23 @@ let _selectedMerchantId = null;
 const _pendingProductIds = new Set();
 
 /** Configuracion del filtro automatico para el merchant Kiky. */
-const KIKY_MERCHANT_ID = '2';
+const KIKY_MERCHANT_ID = '1';
 const KIKY_VISIBLE_PRODUCT_IDS = new Set(['489150', '489161']);
+
+/** Muestra los audios correspondientes al merchant seleccionado. */
+function updateMerchantAudioSections() {
+  const coffeeSection = document.getElementById('section-audios-coffee');
+  const kikySection = document.getElementById('section-audios-kiky');
+  const hasSelectedMerchant = _selectedMerchantId !== null;
+  const isKiky = String(_selectedMerchantId) === KIKY_MERCHANT_ID;
+
+  if (coffeeSection) {
+    coffeeSection.style.display = hasSelectedMerchant && !isKiky ? '' : 'none';
+  }
+  if (kikySection) {
+    kikySection.style.display = hasSelectedMerchant && isKiky ? '' : 'none';
+  }
+}
 
 /**
  * Carga la lista de productos desde GET /products y renderiza la UI.
@@ -858,6 +874,7 @@ async function loadMerchantsAndProducts() {
   }
 
   const selectedMerchant = merchants.find(m => String(m.merchantId) === _selectedMerchantId);
+  updateMerchantAudioSections();
   updateFilterModeButtons();
   renderMerchantList(merchants);
   renderProductList(merchants);
@@ -1026,7 +1043,8 @@ async function toggleMerchant(merchantId, select) {
   };
 
   // Al seleccionar Kiky, dejar visibles unicamente Brownie y Cremoso 3 Leches.
-  if (selectedId === KIKY_MERCHANT_ID) {
+  // if (selectedId === KIKY_MERCHANT_ID) {
+  if (selectedId === 2) {
     const kikyMerchant = merchants.find(
       merchant => String(merchant.merchantId) === KIKY_MERCHANT_ID
     );
