@@ -222,7 +222,46 @@
               <span class="action-card-icon">�</span>
               <span class="action-card-label">Cambiar de producto</span>
             </button>
-           
+
+            <button class="action-card" data-audio="/play-order" id="btn-order-mesero1">
+              <span class="action-card-icon">🔔</span>
+              <span class="action-card-label">Tengo un pedido, ¿Lo puedes revisar?, son los que dicen Robot Mesero</span>
+            </button>
+
+            <button class="action-card" id="btn-order-mesero2" onclick="quickPlay('audio/there_is_an_order_2.mp3', 'audio/there_is_an_order_2.mp3')" style="display:none">
+              <span class="action-card-icon">🔔</span>
+              <span class="action-card-label">[Mesero 2] Tengo un pedido, ¿Lo puedes revisar?</span>
+            </button>
+
+            <button class="action-card" id="btn-order-mesero3" onclick="quickPlay('audio/there_is_an_order_3.wav', 'audio/there_is_an_order_3.wav')" style="display:none">
+              <span class="action-card-icon">🔔</span>
+              <span class="action-card-label">[Mesero 3] Tengo un pedido, ¿Lo puedes revisar?</span>
+            </button>
+
+            <button class="action-card" id="btn-order-mesero4" onclick="quickPlay('audio/there_is_an_order_4.wav', 'audio/there_is_an_order_4.wav')" style="display:none">
+              <span class="action-card-icon">🔔</span>
+              <span class="action-card-label">[Mesero 4] Tengo un pedido, ¿Lo puedes revisar?</span>
+            </button>
+
+            <button class="action-card" data-audio="/play-thanks">
+              <span class="action-card-icon">🙏</span>
+              <span class="action-card-label">Gracias por tu compra, enseguida te lo traigo</span>
+            </button>
+
+            <button class="action-card danger" onclick="stopLocal(); callEndpoint('POST','/audio/stop')">
+              <span class="action-card-icon">🔇</span>
+              <span class="action-card-label">Detener</span>
+            </button>
+             <button class="action-card" onclick="quickPlay('audio/Muchas_graacias.wav', 'audio/Muchas graacias.wav')">
+              <span class="action-card-icon">🙏</span>
+              <span class="action-card-label">Gracias</span>
+              <span class="action-card-sub">Muchas gracias</span>
+            </button>
+              <button class="action-card" data-audio="/play-collect-tray">
+              <span class="action-card-icon">🍽️</span>
+              <span class="action-card-label">¿Hola, puedo recoger tu bandeja?</span>
+            </button>
+
           </div>
         </section>
         <section class="block">
@@ -284,7 +323,7 @@
           </div>
         </section>
 
-        <section class="block">
+        <section class="block" id="section-audios-coffee" style="display:none">
           <div class="block-header">
             <span class="block-icon">🔊</span>
             <span class="block-title">Audios</span>
@@ -296,67 +335,46 @@
               <span class="action-card-icon">❓</span>
               <span class="action-card-label">¿Hola, deseas un café?</span>
             </button>
-            <button class="action-card" data-audio="/play-thanks">
-              <span class="action-card-icon">🙏</span>
-              <span class="action-card-label">Gracias por tu compra, enseguida te lo traigo</span>
-            </button>
+          
             <button class="action-card" data-audio="/play-buy">
               <span class="action-card-icon">🛒</span>
               <span class="action-card-label">Si compras un café, te lo traigo enseguida</span>
             </button>
-            <button class="action-card" data-audio="/play-order" id="btn-order-mesero1">
-              <span class="action-card-icon">🔔</span>
-              <span class="action-card-label">Tengo un pedido, ¿Lo puedes revisar?, son los que dicen Robot Mesero</span>
-            </button>
+        
 
-            <button class="action-card" id="btn-order-mesero2" onclick="quickPlay('audio/there_is_an_order_2.mp3', 'audio/there_is_an_order_2.mp3')"style="display:none">
-              <span class="action-card-icon">🔔</span>
-              <span class="action-card-label">[Mesero 2] Tengo un pedido, ¿Lo puedes revisar?</span>
-            </button>
-
-            <button class="action-card" data-audio="/play-collect-tray">
-              <span class="action-card-icon">🍽️</span>
-              <span class="action-card-label">¿Hola, puedo recoger tu bandeja?</span>
-            </button>
             <button class="action-card" data-audio="/play-coffee">
               <span class="action-card-icon">☕</span>
               <span class="action-card-label">¡Aquí tienes tu café, que lo disfrutes!</span>
             </button>
-            <button class="action-card" onclick="quickPlay('audio/Muchas_graacias.wav', 'audio/Muchas graacias.wav')">
-              <span class="action-card-icon">🙏</span>
-              <span class="action-card-label">Gracias</span>
-              <span class="action-card-sub">Muchas gracias</span>
-            </button>
+          
             <button class="action-card" onclick="quickPlay('audio/dance_to_sell.wav', 'audio/dance_to_sell.wav')">
               <span class="action-card-icon">💃</span>
               <span class="action-card-label">Baile</span>
               <span class="action-card-sub">Si me compras un café, te hago un baile</span>
             </button>
-            <button class="action-card danger" onclick="stopLocal(); callEndpoint('POST','/audio/stop')">
-              <span class="action-card-icon">🔇</span>
-              <span class="action-card-label">Detener</span>
-            </button>
+          
           </div>
 
-          <div class="audio-custom">
+          <!-- <div class="audio-custom">
             <div class="audio-custom-row">
               <input type="text" id="customAsset" placeholder="Ruta del audio (ej: audio/alerta.wav)" value="audio/question_coffe_old2.wav">
             </div>
-            <!-- <div class="audio-custom-row">
+            <div class="audio-custom-row">
               <input type="text" id="customDisplayText" placeholder="Texto a mostrar en pantalla (opcional)">
-            </div> -->
+            </div>
             <div class="audio-custom-row split">
               <input type="number" id="customVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
               <label class="toggle-label">
                 <input type="checkbox" id="customForce"> Forzar
               </label>
               <button class="btn-play" onclick="playCustomAudio()">▶️</button>
+              <button class="btn-play" onclick="playCustomGreeting()" title="Mostrar carrusel y reproducir audio">🖼️</button>
             </div>
-          </div>
+          </div> -->
         </section>
 
         <!-- kIKY -->
-        <section class="block">
+        <section class="block" id ="section-audios-kiky" style="display:none">
           <div class="block-header">
             <span class="block-icon">🔊</span>
             <span class="block-title">Audios Kíky</span>
@@ -367,7 +385,7 @@
               <span class="action-card-label">Aquí tienes</span>
               <span class="action-card-sub">¡Que lo disfrutes!</span>
             </button>
-            <button class="action-card" onclick="quickPlay('audio/Hola_deseas_un_Brown.wav', 'audio/Hola_deseas_un_Brown.wav')">
+            <button class="action-card" onclick="greetWithAudio('audio/Hola_deseas_un_Brown.wav', 'audio/Hola_deseas_un_Brown.wav')">
               <span class="action-card-icon">🍫</span>
               <span class="action-card-label">¿Brownie?</span>
               <span class="action-card-sub">Hola, ¿deseas un Brownie?</span>
@@ -376,6 +394,14 @@
               <span class="action-card-icon">🍰</span>
               <span class="action-card-label">¿3 Leches?</span>
               <span class="action-card-sub">¿Un Cremoso 3 Leches?</span>
+            </button>
+            <button class="action-card" onclick="quickPlay('audio/purchase_buy_dessert_kiky.wav', 'audio/purchase_buy_dessert_kiky.wav')">
+              <span class="action-card-icon">🍰</span>
+              <span class="action-card-label">Si me compras un postre de Kiky, te lo traigo enseguida</span>
+            </button>
+            <button class="action-card" onclick="quickPlay('audio/dance_to_sell_dessert_kiky.wav', 'audio/dance_to_sell_dessert_kiky.wav')">
+              <span class="action-card-icon">💃</span>
+              <span class="action-card-label">Si me compras un postre de Kiky, te hago un baile</span>
             </button>
             <!-- <button class="action-card" onclick="quickPlay('audio/Muchas_graacias.wav', 'audio/Muchas graacias.wav')">
               <span class="action-card-icon">🙏</span>

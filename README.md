@@ -153,6 +153,7 @@ Si el indicador muestra **TTS Offline**, los audios preparados pueden continuar 
 | `POST` | `/config` | Actualiza parcialmente la configuración. |
 | `POST` | `/attract/set` | Cambia la expresión o GIF del robot. Body: `{ "gif": "happy" }`. |
 | `POST` | `/greet` | Muestra el producto y reproduce el saludo. |
+| `POST` | `/greet/audio?asset=audio/...` | Muestra el carrusel desde el primer producto y reproduce el asset indicado. |
 | `POST` | `/product` | Muestra únicamente el producto. |
 | `POST` | `/play-question` | Reproduce la pregunta de compra. |
 | `POST` | `/play-thanks` | Reproduce el agradecimiento. |
@@ -180,6 +181,10 @@ El endpoint `/audio/play` acepta campos como:
   "displayText": null
 }
 ```
+
+El control **Audio personalizado** incluye dos acciones: `▶️` reproduce solo
+el audio y `🖼️` llama a `/greet/audio` para mostrar también el carrusel. Los
+saludos de Brownie y Cremoso utilizan automáticamente esta segunda variante.
 
 ## Servicio TTS
 

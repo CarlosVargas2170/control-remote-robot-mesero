@@ -42,6 +42,11 @@ const AUDIO_LABELS = {
   'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar pedido con QR" para continuar con el pago',
   'there_is_an_order_2.mp3':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 2',
   'dance_to_sell.wav':               'Si me compras un café, te hago un baile',
+  'there_is_an_order_3.wav':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 3',
+  'there_is_an_order_4.wav':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 4',
+  'purchase_buy_dessert_kiky.wav':'Si me compras un postre de Kiky, te lo traigo enseguida',
+    'dance_to_sell_dessert_kiky.wav':'Si me compras un postre de Kiky, te hago un baile'
+
 };
 
 // ── Helpers ──
@@ -59,16 +64,26 @@ function loadSavedUrl() {
   if (saved) document.getElementById('baseUrl').value = saved;
 }
 
-/** Muestra u oculta el botón exclusivo de Mesero 2 según el servidor seleccionado. */
-function updateMesero2Visibility() {
+/** Boton de aviso de pedido correspondiente a cada servidor de mesero. */
+const ORDER_BUTTON_BY_MESERO_IP = {
+  '100.99.244.72': 'btn-order-mesero1',
+  '100.105.14.4': 'btn-order-mesero2',
+  '100.113.184.85': 'btn-order-mesero3',
+  '100.116.45.43': 'btn-order-mesero4',
+};
+
+/** Muestra unicamente el boton de pedido del mesero seleccionado. */
+function updateMeseroOrderVisibility() {
   const select = document.getElementById('baseUrl');
-  const btn = document.getElementById('btn-order-mesero2');
-  const btnMesero1 = document.getElementById('btn-order-mesero1');
-  if (btn && select) {
-    const isMesero2 = select.value.includes('100.105.14.4');
-    btn.style.display = isMesero2 ? '' : 'none';
-    btnMesero1.style.display = isMesero2 ? 'none' : '';
-  }
+  if (!select) return;
+
+  const selectedButtonId = Object.entries(ORDER_BUTTON_BY_MESERO_IP)
+    .find(([ip]) => select.value.includes(ip))?.[1] ?? 'btn-order-mesero1';
+
+  Object.values(ORDER_BUTTON_BY_MESERO_IP).forEach(buttonId => {
+    const button = document.getElementById(buttonId);
+    if (button) button.style.display = buttonId === selectedButtonId ? '' : 'none';
+  });
 }
 
 function log(message, type = 'info') {
@@ -208,6 +223,29 @@ function hideAudioBadge() {
 
 // ── Core ──
 
+/** Endpoints que muestran o inician la interaccion con el carrusel. */
+const MERCHANT_REQUIRED_ENDPOINTS = new Set([
+  '/greet',
+  '/greet/audio',
+  '/product',
+  '/play-question',
+]);
+
+/** Impide usar el carrusel hasta confirmar un merchant en el backend. */
+function requireSelectedMerchant() {
+  if (_selectedMerchantId === null) {
+    log('Primero debes seleccionar un comercio antes de mostrar el carrusel.', 'warn');
+    return false;
+  }
+
+  if (_isToggling) {
+    log('Espera a que termine la seleccion del comercio.', 'warn');
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Llama a un endpoint del robot.
  * @param {string} method - GET, POST, PUT, etc.
@@ -221,6 +259,11 @@ async function setEmotion(emotion) {
 
 
 async function callEndpoint(method, path, body = null, localAudioFile = null) {
+  const endpointPath = String(path).split('?')[0];
+  if (MERCHANT_REQUIRED_ENDPOINTS.has(endpointPath) && !requireSelectedMerchant()) {
+    return { ok: false, error: 'merchant_required' };
+  }
+
   const baseUrl = getBaseUrl();
   const url = `${baseUrl}${path}`;
   log(`${method} ${path} ...`, 'info');
@@ -276,14 +319,20 @@ async function callEndpoint(method, path, body = null, localAudioFile = null) {
 }
 
 async function testConnection() {
+  updateMeseroOrderVisibility();
   log('Probando conexion...', 'info');
   const result = await callEndpoint('GET', '/config');
   if (result.ok) {
     const cfg = result.data?.data || {};
     const merchants = cfg.merchantIds || [];
     log(`Conectado! Merchants=${merchants.join(',')}, Product=${cfg.productId}`, 'ok');
-    // Cargar productos automaticamente tras conectar
-    loadMerchantsAndProducts();
+    // Exigir una seleccion explicita en cada nueva conexion. El merchant que
+    // venga habilitado desde el backend no se considera seleccionado en la UI.
+    _selectedMerchantId = null;
+    _productState = null;
+    _pendingProductIds.clear();
+    updateMerchantAudioSections();
+    await loadMerchantsAndProducts();
     // Empezar a observar el estado de polling del robot
     startPollingStatusWatcher();
     refreshPollingStatus();
@@ -445,6 +494,8 @@ async function stopPolling() {
 
 /** Vincula automaticamente los elementos con data-audio="..." a callEndpoint. */
 function bindAudioButtons() {
+
+  
   document.querySelectorAll('[data-audio]').forEach(btn => {
     const path = btn.dataset.audio;
     const localFile = AUDIO_MAP[path] || null;
@@ -481,6 +532,49 @@ async function quickPlay(assetPath, localPath) {
   }
 }
 
+/** Muestra el carrusel desde el primer producto y reproduce un audio.
+ *  El asset debe existir en assets/audio/ dentro de mini-app-qr.
+ *  @param {string} assetPath - Ruta del asset en el robot.
+ *  @param {string} localPath - Copia local usada para oír el audio en el panel.
+ *  @param {Object} options - Opciones force, displayText y showOverlay.
+ */
+async function greetWithAudio(assetPath, localPath, options = {}) {
+  // Validar antes de reproducir el audio local para evitar una reproduccion
+  // parcial cuando todavia no se confirmo el comercio.
+  if (!requireSelectedMerchant()) {
+    return { ok: false, error: 'merchant_required' };
+  }
+
+  const asset = String(assetPath || '').trim();
+  if (!asset) {
+    log('Selecciona una ruta de audio para mostrar el carrusel', 'warn');
+    return { ok: false, error: 'asset_required' };
+  }
+
+  const fileName = asset.includes('/') ? asset.split('/').pop() : asset;
+  const displayText = options.displayText ?? AUDIO_LABELS[fileName] ?? null;
+  const params = new URLSearchParams({ asset });
+
+  if (options.force === true) params.set('force', 'true');
+  if (displayText) params.set('displayText', displayText);
+  if (options.showOverlay === false) params.set('showOverlay', 'false');
+
+  if (localPath) playLocal(localPath);
+
+  const result = await callEndpoint('POST', `/greet/audio?${params.toString()}`);
+  if (!result.ok) {
+    log('⚠️ No se pudo mostrar el carrusel con el audio seleccionado.', 'warn');
+    return result;
+  }
+
+  if (result.data?.audio === false) {
+    stopLocal();
+    log('⚠️ Robot en cooldown. Audio local detenido.', 'warn');
+  }
+
+  return result;
+}
+
 async function playCustomAudio() {
   const asset = document.getElementById('customAsset').value.trim();
   const volume = parseFloat(document.getElementById('customVolume').value) || 1.0;
@@ -511,6 +605,24 @@ async function playCustomAudio() {
   if (!result.ok) {
     log('⚠️ No se pudo reproducir en el robot. Sonando solo localmente.', 'warn');
   }
+}
+
+/** Usa el asset escrito en Audio personalizado y muestra también el carrusel. */
+async function playCustomGreeting() {
+  const asset = document.getElementById('customAsset').value.trim();
+  const force = document.getElementById('customForce').checked;
+  const displayText = document.getElementById('customDisplayText')?.value?.trim() || null;
+
+  if (!asset) {
+    log('Escribe la ruta del asset de audio', 'warn');
+    return;
+  }
+
+  const localPath = asset.replace(/\\/g, '/').replace(/^assets\//, '');
+  await greetWithAudio(asset, localPath, {
+    force,
+    displayText,
+  });
 }
 
 /** Alias conservado para enviar el texto exclusivamente al servicio TTS. */
@@ -713,6 +825,25 @@ let _selectedMerchantId = null;
 /** IDs de productos con cambios locales aun no enviados. */
 const _pendingProductIds = new Set();
 
+/** Configuracion del filtro automatico para el merchant Kiky. */
+const KIKY_MERCHANT_ID = '1';
+const KIKY_VISIBLE_PRODUCT_IDS = new Set(['489150', '489161']);
+
+/** Muestra los audios correspondientes al merchant seleccionado. */
+function updateMerchantAudioSections() {
+  const coffeeSection = document.getElementById('section-audios-coffee');
+  const kikySection = document.getElementById('section-audios-kiky');
+  const hasSelectedMerchant = _selectedMerchantId !== null;
+  const isKiky = String(_selectedMerchantId) === KIKY_MERCHANT_ID;
+
+  if (coffeeSection) {
+    coffeeSection.style.display = hasSelectedMerchant && !isKiky ? '' : 'none';
+  }
+  if (kikySection) {
+    kikySection.style.display = hasSelectedMerchant && isKiky ? '' : 'none';
+  }
+}
+
 /**
  * Carga la lista de productos desde GET /products y renderiza la UI.
  */
@@ -752,15 +883,14 @@ async function loadMerchantsAndProducts() {
   _pendingProductIds.clear();
   _currentFilterMode = _productState.filterMode || 'all';
   const merchants = Array.isArray(_productState.merchants) ? _productState.merchants : [];
-  const selectedStillExists = merchants.some(m => String(m.merchantId) === _selectedMerchantId);
+  const selectedStillExists = _selectedMerchantId !== null &&
+    merchants.some(m => String(m.merchantId) === _selectedMerchantId);
   if (!selectedStillExists) {
-    const initiallyEnabled = merchants.find(m => m.enabled === true);
-    _selectedMerchantId = initiallyEnabled
-      ? String(initiallyEnabled.merchantId)
-      : (merchants.length > 0 ? String(merchants[0].merchantId) : null);
+    _selectedMerchantId = null;
   }
 
   const selectedMerchant = merchants.find(m => String(m.merchantId) === _selectedMerchantId);
+  updateMerchantAudioSections();
   updateFilterModeButtons();
   renderMerchantList(merchants);
   renderProductList(merchants);
@@ -785,21 +915,24 @@ function renderMerchantList(merchants) {
     const id = String(m.merchantId);
     return `<option value="${escHtml(id)}" ${id === _selectedMerchantId ? 'selected' : ''}>[${escHtml(id)}] ${escHtml(m.merchantName)}</option>`;
   }).join('');
+  const placeholder = `<option value="" disabled ${_selectedMerchantId === null ? 'selected' : ''}>Selecciona un comercio</option>`;
 
   container.innerHTML = `
     <div class="merchant-picker">
       <span class="merchant-picker-icon" aria-hidden="true">🏪</span>
       <div class="merchant-picker-body">
-        <label class="merchant-select-label" for="merchantSelect">Comercio habilitado</label>
+        <label class="merchant-select-label" for="merchantSelect">Seleccionar comercio</label>
         <div class="merchant-select-wrap">
           <select id="merchantSelect" class="merchant-select" onchange="toggleMerchant(this.value, this)" ${_isToggling ? 'disabled' : ''}>
-            ${options}
+            ${placeholder}${options}
           </select>
         </div>
       </div>
     </div>
     <div class="merchant-selection-status">
-      ${selected ? `<span class="merchant-status-dot"></span><strong>${selected.visibleCount ?? 0}</strong> de ${selected.productCount ?? selected.products?.length ?? 0} productos visibles` : ''}
+      ${selected
+        ? `<span class="merchant-status-dot"></span><strong>${selected.visibleCount ?? 0}</strong> de ${selected.productCount ?? selected.products?.length ?? 0} productos visibles`
+        : 'Debes seleccionar un comercio para continuar'}
     </div>`;
 }
 
@@ -810,7 +943,7 @@ function renderProductList(merchants) {
 
   const selectedMerchant = merchants?.find(m => String(m.merchantId) === _selectedMerchantId);
   if (!selectedMerchant) {
-    container.innerHTML = '<p class="hint-text">Sin productos</p>';
+    container.innerHTML = '<p class="hint-text">Selecciona un comercio para mostrar sus productos</p>';
     return;
   }
 
@@ -920,11 +1053,45 @@ async function toggleMerchant(merchantId, select) {
     merchantMap[id] = { enabled: id === selectedId };
   }
 
-  log(`Seleccionando merchant ${selectedId}...`, 'info');
-  const result = await callEndpoint('POST', '/products/filter', {
+  const filterPayload = {
     merchants: merchantMap,
     reload: true
-  });
+  };
+
+  // Al seleccionar Kiky, dejar visibles unicamente Brownie y Cremoso 3 Leches.
+  // if (selectedId === KIKY_MERCHANT_ID) {
+  if (selectedId === 2) {
+    const kikyMerchant = merchants.find(
+      merchant => String(merchant.merchantId) === KIKY_MERCHANT_ID
+    );
+    const kikyProducts = Array.isArray(kikyMerchant?.products) ? kikyMerchant.products : [];
+    const availableProductIds = new Set(kikyProducts.map(product => String(product.id)));
+    const missingProductIds = [...KIKY_VISIBLE_PRODUCT_IDS].filter(
+      productId => !availableProductIds.has(productId)
+    );
+
+    if (missingProductIds.length > 0) {
+      _selectedMerchantId = previousMerchantId;
+      _isToggling = false;
+      if (select) {
+        select.value = previousMerchantId ?? '';
+        select.disabled = false;
+      }
+      log(`ERR: No se aplico el filtro de Kiky. Productos faltantes: ${missingProductIds.join(', ')}`, 'err');
+      return;
+    }
+
+    filterPayload.filterMode = 'blacklist';
+    filterPayload.products = Object.fromEntries(
+      kikyProducts.map(product => {
+        const visible = KIKY_VISIBLE_PRODUCT_IDS.has(String(product.id));
+        return [String(product.id), { visible, pinned: visible }];
+      })
+    );
+  }
+
+  log(`Seleccionando merchant ${selectedId}...`, 'info');
+  const result = await callEndpoint('POST', '/products/filter', filterPayload);
 
   if (result.ok) {
     log(`OK: Merchant ${selectedId} habilitado`, 'ok');
@@ -1174,8 +1341,8 @@ function escHtml(str) {
 window.addEventListener('DOMContentLoaded', () => {
   loadSavedUrl();
   bindAudioButtons();
-  updateMesero2Visibility();
-  document.getElementById('baseUrl').addEventListener('change', updateMesero2Visibility);
+  updateMeseroOrderVisibility();
+  document.getElementById('baseUrl').addEventListener('change', updateMeseroOrderVisibility);
   updatePollingStatusUI({
     phase: 'idle',
     isPolling: false,
