@@ -809,7 +809,7 @@ let _selectedMerchantId = null;
 const _pendingProductIds = new Set();
 
 /** Configuracion del filtro automatico para el merchant Kiky. */
-const KIKY_MERCHANT_ID = '1';
+const KIKY_MERCHANT_ID = '2';
 const KIKY_VISIBLE_PRODUCT_IDS = new Set(['489150', '489161']);
 
 /**
