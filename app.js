@@ -768,6 +768,10 @@ let _selectedMerchantId = null;
 /** IDs de productos con cambios locales aun no enviados. */
 const _pendingProductIds = new Set();
 
+/** Configuracion del filtro automatico para el merchant Kiky. */
+const KIKY_MERCHANT_ID = '1';
+const KIKY_VISIBLE_PRODUCT_IDS = new Set(['489150', '489161']);
+
 /**
  * Carga la lista de productos desde GET /products y renderiza la UI.
  */
@@ -975,11 +979,44 @@ async function toggleMerchant(merchantId, select) {
     merchantMap[id] = { enabled: id === selectedId };
   }
 
-  log(`Seleccionando merchant ${selectedId}...`, 'info');
-  const result = await callEndpoint('POST', '/products/filter', {
+  const filterPayload = {
     merchants: merchantMap,
     reload: true
-  });
+  };
+
+  // Al seleccionar Kiky, dejar visibles unicamente Brownie y Cremoso 3 Leches.
+  if (selectedId === KIKY_MERCHANT_ID) {
+    const kikyMerchant = merchants.find(
+      merchant => String(merchant.merchantId) === KIKY_MERCHANT_ID
+    );
+    const kikyProducts = Array.isArray(kikyMerchant?.products) ? kikyMerchant.products : [];
+    const availableProductIds = new Set(kikyProducts.map(product => String(product.id)));
+    const missingProductIds = [...KIKY_VISIBLE_PRODUCT_IDS].filter(
+      productId => !availableProductIds.has(productId)
+    );
+
+    if (missingProductIds.length > 0) {
+      _selectedMerchantId = previousMerchantId;
+      _isToggling = false;
+      if (select) {
+        select.value = previousMerchantId ?? '';
+        select.disabled = false;
+      }
+      log(`ERR: No se aplico el filtro de Kiky. Productos faltantes: ${missingProductIds.join(', ')}`, 'err');
+      return;
+    }
+
+    filterPayload.filterMode = 'blacklist';
+    filterPayload.products = Object.fromEntries(
+      kikyProducts.map(product => {
+        const visible = KIKY_VISIBLE_PRODUCT_IDS.has(String(product.id));
+        return [String(product.id), { visible, pinned: visible }];
+      })
+    );
+  }
+
+  log(`Seleccionando merchant ${selectedId}...`, 'info');
+  const result = await callEndpoint('POST', '/products/filter', filterPayload);
 
   if (result.ok) {
     log(`OK: Merchant ${selectedId} habilitado`, 'ok');
