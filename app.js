@@ -39,10 +39,9 @@ const AUDIO_LABELS = {
 
   'please_return_prod.wav':       'Por favor, devuelve el producto a la bandeja',
   'switch_product.wav':           'Con un solo dedo puedes deslizar hacia la derecha o izquierda para cambiar de producto',
-  'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar con QR" para continuar con el pago',
+  'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar pedido con QR" para continuar con el pago',
   'there_is_an_order_2.mp3':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 2',
-
-  'order_to_retire_tray.mp3':     'Por favor, ¿me puedes retirar las bandejas?'
+  'dance_to_sell.wav':               'Si me compras un café, te hago un baile',
 };
 
 // ── Helpers ──
@@ -98,6 +97,57 @@ function setConnectionStatus(online) {
     dot.className = 'dot offline';
     text.textContent = 'Offline';
     text.style.color = 'var(--red)';
+  }
+}
+
+let _ttsOnline = false;
+
+/** Actualiza el indicador visual de disponibilidad del servicio TTS (:9000). */
+function setTtsStatus(online) {
+  _ttsOnline = online;
+  const dot = document.getElementById('ttsDot');
+  const text = document.getElementById('ttsText');
+  const btn = document.getElementById('btnTtsSend');
+  if (!dot || !text) return;
+  if (online) {
+    dot.className = 'dot online';
+    text.textContent = 'TTS Online';
+    if (btn) btn.disabled = false;
+  } else {
+    dot.className = 'dot offline';
+    text.textContent = 'TTS Offline';
+    if (btn) btn.disabled = true;
+  }
+}
+
+/** Verifica la salud del servicio TTS en http://{host}:9000/health. */
+async function checkTtsService() {
+  setTtsStatus(false); // por defecto, offline hasta confirmar
+  try {
+    const baseUrl = getBaseUrl();
+    const host = new URL(baseUrl).hostname;
+    const res = await fetch(`http://${host}:9000/health`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(3000),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const health = await res.json();
+    if (health.status !== 'ok') {
+      throw new Error(`Estado inesperado: ${health.status ?? 'desconocido'}`);
+    }
+
+    setTtsStatus(true);
+    const gpuStatus = health.gpu ? 'GPU activa' : 'sin GPU';
+    const speakers = health.speakers_loaded ?? 0;
+    log(`Servicio TTS disponible en ${host}:9000 (${gpuStatus}, speakers: ${speakers})`, 'ok');
+  } catch (err) {
+    setTtsStatus(false);
+    log(`Servicio TTS no disponible: ${err.message}`, 'warn');
   }
 }
 
@@ -172,7 +222,6 @@ async function setEmotion(emotion) {
 
 async function callEndpoint(method, path, body = null, localAudioFile = null) {
   const baseUrl = getBaseUrl();
-  console.log(path)
   const url = `${baseUrl}${path}`;
   log(`${method} ${path} ...`, 'info');
 
@@ -238,6 +287,8 @@ async function testConnection() {
     // Empezar a observar el estado de polling del robot
     startPollingStatusWatcher();
     refreshPollingStatus();
+    // Verificar también el servicio TTS
+    checkTtsService();
   } else {
     stopPollingStatusWatcher();
     updatePollingStatusUI({ phase: 'idle', isPolling: false, label: 'Sin conexión' });
@@ -415,9 +466,7 @@ async function quickPlay(assetPath, localPath) {
 
   // Extraer nombre del archivo para el displayText en el robot.
   const fileName = localPath.includes('/') ? localPath.split('/').pop() : localPath;
-  console.log("nombre del archivo: "+fileName)
   const displayText = AUDIO_LABELS[fileName] || null;
-  console.log("texto del audio: "+displayText)
 
   // Enviar al robot
   const result = await callEndpoint('POST', '/audio/play', {
@@ -430,6 +479,43 @@ async function quickPlay(assetPath, localPath) {
   if (!result.ok) {
     log('⚠️ Robot no reprodujo. Sonando solo local.', 'warn');
   }
+}
+
+/** Muestra el carrusel desde el primer producto y reproduce un audio.
+ *  El asset debe existir en assets/audio/ dentro de mini-app-qr.
+ *  @param {string} assetPath - Ruta del asset en el robot.
+ *  @param {string} localPath - Copia local usada para oír el audio en el panel.
+ *  @param {Object} options - Opciones force, displayText y showOverlay.
+ */
+async function greetWithAudio(assetPath, localPath, options = {}) {
+  const asset = String(assetPath || '').trim();
+  if (!asset) {
+    log('Selecciona una ruta de audio para mostrar el carrusel', 'warn');
+    return { ok: false, error: 'asset_required' };
+  }
+
+  const fileName = asset.includes('/') ? asset.split('/').pop() : asset;
+  const displayText = options.displayText ?? AUDIO_LABELS[fileName] ?? null;
+  const params = new URLSearchParams({ asset });
+
+  if (options.force === true) params.set('force', 'true');
+  if (displayText) params.set('displayText', displayText);
+  if (options.showOverlay === false) params.set('showOverlay', 'false');
+
+  if (localPath) playLocal(localPath);
+
+  const result = await callEndpoint('POST', `/greet/audio?${params.toString()}`);
+  if (!result.ok) {
+    log('⚠️ No se pudo mostrar el carrusel con el audio seleccionado.', 'warn');
+    return result;
+  }
+
+  if (result.data?.audio === false) {
+    stopLocal();
+    log('⚠️ Robot en cooldown. Audio local detenido.', 'warn');
+  }
+
+  return result;
 }
 
 async function playCustomAudio() {
@@ -461,6 +547,180 @@ async function playCustomAudio() {
   // así que el audio local sigue sonando como fallback.
   if (!result.ok) {
     log('⚠️ No se pudo reproducir en el robot. Sonando solo localmente.', 'warn');
+  }
+}
+
+/** Usa el asset escrito en Audio personalizado y muestra también el carrusel. */
+async function playCustomGreeting() {
+  const asset = document.getElementById('customAsset').value.trim();
+  const force = document.getElementById('customForce').checked;
+  const displayText = document.getElementById('customDisplayText')?.value?.trim() || null;
+
+  if (!asset) {
+    log('Escribe la ruta del asset de audio', 'warn');
+    return;
+  }
+
+  const localPath = asset.replace(/\\/g, '/').replace(/^assets\//, '');
+  await greetWithAudio(asset, localPath, {
+    force,
+    displayText,
+  });
+}
+
+/** Alias conservado para enviar el texto exclusivamente al servicio TTS. */
+async function sendConsoleText() {
+  // La llamada a /audio/play de mini-app-qr queda desactivada.
+  // Todo texto se envía exclusivamente al servicio TTS.
+  return sendToServiceVoice();
+}
+
+const TTS_SAMPLE_RATE = 24000;
+const TTS_PREBUFFER_SECONDS = 0.15;
+
+function concatBytes(first, second) {
+  const result = new Uint8Array(first.length + second.length);
+  result.set(first, 0);
+  result.set(second, first.length);
+  return result;
+}
+
+/** Reproduce un stream PCM float32 little-endian, mono, a 24000 Hz. */
+async function playTtsStream(response, audioContext) {
+  if (!response.body) {
+    throw new Error('El navegador no soporta streaming para esta respuesta');
+  }
+  const reader = response.body.getReader();
+  let nextStartTime = audioContext.currentTime + TTS_PREBUFFER_SECONDS;
+  let leftoverBytes = new Uint8Array(0);
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value?.length) continue;
+
+      // Una muestra float32 ocupa 4 bytes. Se conserva cualquier resto para
+      // unirlo con el siguiente chunk del stream.
+      const combined = concatBytes(leftoverBytes, value);
+      const usableLength = combined.length - (combined.length % 4);
+      leftoverBytes = combined.slice(usableLength);
+
+      if (usableLength === 0) continue;
+
+      const samples = new Float32Array(
+        combined.buffer,
+        combined.byteOffset,
+        usableLength / 4,
+      );
+      const audioBuffer = audioContext.createBuffer(
+        1,
+        samples.length,
+        TTS_SAMPLE_RATE,
+      );
+      audioBuffer.copyToChannel(samples, 0);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+
+      const startTime = Math.max(nextStartTime, audioContext.currentTime);
+      source.start(startTime);
+      nextStartTime = startTime + audioBuffer.duration;
+    }
+
+    if (leftoverBytes.length > 0) {
+      log(`TTS: se descartaron ${leftoverBytes.length} bytes incompletos`, 'warn');
+    }
+
+    // El stream ya terminó, pero pueden quedar chunks programados sonando.
+    const remainingMs = Math.max(
+      0,
+      (nextStartTime - audioContext.currentTime) * 1000,
+    );
+    await new Promise(resolve => window.setTimeout(resolve, remainingMs));
+  } finally {
+    reader.releaseLock();
+    await audioContext.close();
+  }
+}
+
+/**
+ * Envía el texto del textarea al servicio de síntesis de voz (TTS).
+ * Reproduce en el navegador el stream PCM devuelto por el servicio.
+ */
+async function sendToServiceVoice() {
+  const textarea = document.getElementById('textInput');
+  const text = textarea?.value?.trim();
+  let audioContext = null;
+
+  if (!text) {
+    log('Escribe un texto antes de enviar', 'warn');
+    return;
+  }
+
+  if (!_ttsOnline) {
+    log('Servicio TTS no disponible. Conecta primero.', 'warn');
+    return;
+  }
+
+  // Debe crearse y activarse durante el clic del usuario. Si se crea después
+  // del fetch, Chrome puede bloquearlo por su política de autoplay.
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    log('Web Audio API no está disponible en este navegador', 'err');
+    return;
+  }
+
+  audioContext = new AudioContextClass();
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume();
+  }
+
+  if (audioContext.state !== 'running') {
+    await audioContext.close();
+    log(`No se pudo activar el audio del navegador (${audioContext.state})`, 'err');
+    return;
+  }
+
+  log(`Enviando texto al servicio TTS: "${text}"`, 'info');
+  log(`Audio del navegador activo a ${audioContext.sampleRate} Hz`, 'info');
+
+  const baseUrl = getBaseUrl();
+  const host = new URL(baseUrl).hostname;
+  const TTS_URL = `http://${host}:9000/synthesize/play`;
+  const TTS_TOKEN = '501a8d0c5fe72d11e5af9e246548e3ec501458f61b770558813552aae7ce89e1';
+
+  try {
+    const res = await fetch(TTS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/octet-stream',
+        'Authorization': `Bearer ${TTS_TOKEN}`,
+      },
+      body: JSON.stringify({
+        text: text,
+        speaker_id: 'default',
+        language: 'es',
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      log(`ERR TTS ${res.status}: ${errText}`, 'err');
+      return;
+    }
+
+    await playTtsStream(res, audioContext);
+    log('Texto enviado y audio TTS reproducido correctamente', 'ok');
+    textarea.value = '';
+  } catch (err) {
+    log(`ERR TTS: ${err.message}`, 'err');
+  } finally {
+    if (audioContext && audioContext.state !== 'closed') {
+      await audioContext.close();
+    }
   }
 }
 
@@ -503,36 +763,69 @@ let _productState = null;
 let _currentFilterMode = 'all';
 /** Indica si hay una operacion de toggle en progreso. */
 let _isToggling = false;
+/** Merchant seleccionado actualmente en el menu desplegable. */
+let _selectedMerchantId = null;
+/** IDs de productos con cambios locales aun no enviados. */
+const _pendingProductIds = new Set();
 
 /**
  * Carga la lista de productos desde GET /products y renderiza la UI.
  */
 async function loadMerchantsAndProducts() {
+  if (_pendingProductIds.size > 0 && !_isToggling) {
+    log('Guarda los filtros pendientes antes de volver a cargar productos.', 'warn');
+    return;
+  }
+
+  const merchantContainer = document.getElementById('merchantList');
+  const productContainer = document.getElementById('productList');
+  if (merchantContainer) merchantContainer.innerHTML = '<p class="hint-text">Cargando merchants...</p>';
+  if (productContainer) productContainer.innerHTML = '<p class="hint-text">Cargando productos...</p>';
+
   const result = await callEndpoint('GET', '/products');
 
   if (!result.ok) {
-    document.getElementById('merchantList').innerHTML = '<p class="hint-text">Error al cargar productos</p>';
-    document.getElementById('productList').innerHTML = '<p class="hint-text">Error al cargar</p>';
+    _productState = null;
+    _pendingProductIds.clear();
+    if (merchantContainer) merchantContainer.innerHTML = '<p class="hint-text error-text">Error al cargar merchants</p>';
+    if (productContainer) productContainer.innerHTML = '<p class="hint-text error-text">Error al cargar productos</p>';
+    updateHeaderCount(0, 0);
     return;
   }
 
   const data = result.data;
   if (!data.cacheLoaded || !data.data) {
-    document.getElementById('merchantList').innerHTML = '<p class="hint-text">No hay productos cargados. Pulsa Conectar cuando la app este iniciada.</p>';
-    document.getElementById('productList').innerHTML = '<p class="hint-text">Carga productos primero</p>';
+    _productState = null;
+    _pendingProductIds.clear();
+    if (merchantContainer) merchantContainer.innerHTML = '<p class="hint-text">No hay productos cargados. Pulsa Conectar cuando la app este iniciada.</p>';
+    if (productContainer) productContainer.innerHTML = '<p class="hint-text">Carga productos primero</p>';
     updateHeaderCount(0, 0);
     return;
   }
 
   _productState = data.data;
+  _pendingProductIds.clear();
   _currentFilterMode = _productState.filterMode || 'all';
+  const merchants = Array.isArray(_productState.merchants) ? _productState.merchants : [];
+  const selectedStillExists = merchants.some(m => String(m.merchantId) === _selectedMerchantId);
+  if (!selectedStillExists) {
+    const initiallyEnabled = merchants.find(m => m.enabled === true);
+    _selectedMerchantId = initiallyEnabled
+      ? String(initiallyEnabled.merchantId)
+      : (merchants.length > 0 ? String(merchants[0].merchantId) : null);
+  }
+
+  const selectedMerchant = merchants.find(m => String(m.merchantId) === _selectedMerchantId);
   updateFilterModeButtons();
-  renderMerchantList(_productState.merchants);
-  renderProductList(_productState.merchants);
-  updateHeaderCount(_productState.totalProducts, _productState.visibleProducts);
+  renderMerchantList(merchants);
+  renderProductList(merchants);
+  updateHeaderCount(
+    selectedMerchant?.productCount ?? selectedMerchant?.products?.length ?? 0,
+    selectedMerchant?.visibleCount ?? selectedMerchant?.products?.filter(p => p.visible).length ?? 0
+  );
 }
 
-/** Renderiza la lista de merchants con toggles. */
+/** Renderiza un menu para seleccionar un unico merchant. */
 function renderMerchantList(merchants) {
   const container = document.getElementById('merchantList');
   if (!container) return;
@@ -542,32 +835,27 @@ function renderMerchantList(merchants) {
     return;
   }
 
-  let html = '';
-  for (const m of merchants) {
-    const enabled = m.enabled !== false;
-    const cls = enabled ? '' : 'disabled';
-    html += `
-      <div class="merchant-item ${cls}" id="merchant-${m.merchantId}">
-        <span class="merchant-icon">${enabled ? '✅' : '⛔'}</span>
-        <div class="merchant-info">
-          <div class="merchant-name">[${m.merchantId}] ${escHtml(m.merchantName)}</div>
-          <div class="merchant-stats">${m.visibleCount}/${m.productCount} visibles</div>
+  const selected = merchants.find(m => String(m.merchantId) === _selectedMerchantId);
+  const options = merchants.map(m => {
+    const id = String(m.merchantId);
+    return `<option value="${escHtml(id)}" ${id === _selectedMerchantId ? 'selected' : ''}>[${escHtml(id)}] ${escHtml(m.merchantName)}</option>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="merchant-picker">
+      <span class="merchant-picker-icon" aria-hidden="true">🏪</span>
+      <div class="merchant-picker-body">
+        <label class="merchant-select-label" for="merchantSelect">Comercio habilitado</label>
+        <div class="merchant-select-wrap">
+          <select id="merchantSelect" class="merchant-select" onchange="toggleMerchant(this.value, this)" ${_isToggling ? 'disabled' : ''}>
+            ${options}
+          </select>
         </div>
-        <div class="merchant-actions">
-          <label class="toggle-switch" title="${enabled ? 'Deshabilitar' : 'Habilitar'} merchant">
-            <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleMerchant(${m.merchantId}, this)">
-            <span class="toggle-slider"></span>
-          </label>
-          <button class="btn-remove" title="Eliminar merchant" onclick="removeMerchant(${m.merchantId})">×</button>
-        </div>
-      </div>`;
-  }
-  html += `
-    <div style="display:flex;gap:4px;margin-top:6px">
-      <button class="btn-sm" style="flex:1" onclick="addMerchant()">+ Agregar</button>
-      <button class="btn-sm accent" style="flex:1" onclick="reloadProducts()">Recargar</button>
+      </div>
+    </div>
+    <div class="merchant-selection-status">
+      ${selected ? `<span class="merchant-status-dot"></span><strong>${selected.visibleCount ?? 0}</strong> de ${selected.productCount ?? selected.products?.length ?? 0} productos visibles` : ''}
     </div>`;
-  container.innerHTML = html;
 }
 
 /** Renderiza la lista de productos agrupados por merchant. */
@@ -575,8 +863,14 @@ function renderProductList(merchants) {
   const container = document.getElementById('productList');
   if (!container) return;
 
-  if (!merchants || merchants.length === 0) {
+  const selectedMerchant = merchants?.find(m => String(m.merchantId) === _selectedMerchantId);
+  if (!selectedMerchant) {
     container.innerHTML = '<p class="hint-text">Sin productos</p>';
+    return;
+  }
+
+  if (!selectedMerchant.products || selectedMerchant.products.length === 0) {
+    container.innerHTML = '<p class="hint-text">El merchant seleccionado no tiene productos</p>';
     return;
   }
 
@@ -587,7 +881,7 @@ function renderProductList(merchants) {
   let colorIdx = 0;
   let html = '';
 
-  for (const m of merchants) {
+  for (const m of [selectedMerchant]) {
     if (!m.products || m.products.length === 0) continue;
     const dotColor = colors[colorIdx % colors.length];
     colorIdx++;
@@ -618,9 +912,31 @@ function renderProductList(merchants) {
 
   html += `
     <div style="display:flex;gap:4px;margin-top:8px">
-      <button class="btn-sm success" style="flex:1" onclick="saveFilters()">Guardar filtros</button>
+      <button id="btnSaveFilters" class="btn-sm success" style="flex:1" onclick="saveFilters()" ${_pendingProductIds.size === 0 || _isToggling ? 'disabled' : ''}>
+        ${_pendingProductIds.size > 0 ? `Guardar filtros (${_pendingProductIds.size})` : 'Sin cambios pendientes'}
+      </button>
     </div>`;
   container.innerHTML = html;
+}
+
+/** Retorna el merchant que se esta editando actualmente. */
+function getSelectedMerchant() {
+  const merchants = Array.isArray(_productState?.merchants) ? _productState.merchants : [];
+  return merchants.find(m => String(m.merchantId) === _selectedMerchantId) ?? null;
+}
+
+/** Recalcula contadores y vuelve a pintar el borrador local de productos. */
+function renderPendingProductChanges() {
+  const merchant = getSelectedMerchant();
+  if (!merchant) return;
+
+  merchant.productCount = merchant.products?.length ?? 0;
+  merchant.visibleCount = merchant.products?.filter(p => p.visible).length ?? 0;
+  _currentFilterMode = 'blacklist';
+  updateFilterModeButtons();
+  renderMerchantList(_productState.merchants);
+  renderProductList(_productState.merchants);
+  updateHeaderCount(merchant.productCount, merchant.visibleCount);
 }
 
 /** Actualiza el contador en el header de Productos. */
@@ -629,75 +945,94 @@ function updateHeaderCount(total, visible) {
   if (badge) badge.textContent = `${_currentFilterMode.toUpperCase()} · ${visible}/${total}`;
 }
 
-/** Habilita/deshabilita un merchant con loading state y auto-refresh. */
-async function toggleMerchant(merchantId, checkbox) {
-  if (_isToggling) { checkbox.checked = !checkbox.checked; return; }
-  _isToggling = true;
-  const enabled = checkbox.checked;
+/** Habilita solo el merchant seleccionado y deshabilita todos los demas. */
+async function toggleMerchant(merchantId, select) {
+  if (_isToggling || !_productState) {
+    if (select) select.value = _selectedMerchantId ?? '';
+    return;
+  }
+  if (_pendingProductIds.size > 0) {
+    if (select) select.value = _selectedMerchantId ?? '';
+    log('Guarda los filtros pendientes antes de cambiar de merchant.', 'warn');
+    return;
+  }
 
-  log(`Merchant ${merchantId}: ${enabled ? 'habilitando' : 'deshabilitando'}...`, 'info');
+  const merchants = Array.isArray(_productState.merchants) ? _productState.merchants : [];
+  const selectedId = String(merchantId);
+  if (!merchants.some(m => String(m.merchantId) === selectedId)) {
+    if (select) select.value = _selectedMerchantId ?? '';
+    return;
+  }
+
+  const previousMerchantId = _selectedMerchantId;
+  _isToggling = true;
+  _selectedMerchantId = selectedId;
+  if (select) select.disabled = true;
+
+  const merchantMap = {};
+  for (const merchant of merchants) {
+    const id = String(merchant.merchantId);
+    merchantMap[id] = { enabled: id === selectedId };
+  }
+
+  log(`Seleccionando merchant ${selectedId}...`, 'info');
   const result = await callEndpoint('POST', '/products/filter', {
-    merchants: { [String(merchantId)]: { enabled } },
+    merchants: merchantMap,
     reload: true
   });
 
   if (result.ok) {
-    log(`OK: Merchant ${merchantId} ${enabled ? 'habilitado' : 'deshabilitado'}`, 'ok');
-    setTimeout(() => loadMerchantsAndProducts(), 800);
+    log(`OK: Merchant ${selectedId} habilitado`, 'ok');
+    await new Promise(resolve => setTimeout(resolve, 800));
+    await loadMerchantsAndProducts();
   } else {
-    checkbox.checked = !enabled; // Revertir toggle
-    log(`ERR: No se pudo ${enabled ? 'habilitar' : 'deshabilitar'} merchant ${merchantId}`, 'err');
+    _selectedMerchantId = previousMerchantId;
+    if (select) select.value = previousMerchantId ?? '';
+    log(`ERR: No se pudo habilitar el merchant ${selectedId}`, 'err');
   }
   _isToggling = false;
+  const currentSelect = document.getElementById('merchantSelect');
+  if (currentSelect) currentSelect.disabled = false;
 }
 
-/** Muestra/oculta un producto con loading state y auto-refresh. */
-async function toggleProduct(productId, checkbox) {
+/** Actualiza localmente la visibilidad; Guardar filtros envia todos los cambios. */
+function toggleProduct(productId, checkbox) {
   if (_isToggling) { checkbox.checked = !checkbox.checked; return; }
-  _isToggling = true;
-  const visible = checkbox.checked;
-
-  const result = await callEndpoint('POST', '/products/filter', {
-    products: { [String(productId)]: { visible } },
-    reload: true
-  });
-
-  if (result.ok) {
-    log(`Producto ${productId}: ${visible ? 'visible' : 'oculto'}`, 'ok');
-    setTimeout(() => loadMerchantsAndProducts(), 800);
-  } else {
-    checkbox.checked = !visible;
-    log(`ERR: No se pudo ${visible ? 'mostrar' : 'ocultar'} producto ${productId}`, 'err');
+  const merchant = getSelectedMerchant();
+  const product = merchant?.products?.find(p => String(p.id) === String(productId));
+  if (!product) {
+    checkbox.checked = !checkbox.checked;
+    return;
   }
-  _isToggling = false;
+
+  product.visible = checkbox.checked;
+  if (!product.visible) product.pinned = false;
+  _pendingProductIds.add(String(productId));
+  log(`Producto ${productId}: cambio pendiente (${product.visible ? 'visible' : 'oculto'})`, 'info');
+  renderPendingProductChanges();
 }
 
-/** Fija/desfija un producto con loading state y auto-refresh. */
-async function togglePinProduct(productId, pinned, btn) {
+/** Actualiza localmente el fijado; Guardar filtros envia todos los cambios. */
+function togglePinProduct(productId, pinned, btn) {
   if (_isToggling) return;
-  _isToggling = true;
+  const merchant = getSelectedMerchant();
+  const product = merchant?.products?.find(p => String(p.id) === String(productId));
+  if (!product) return;
 
-  if (btn) btn.style.opacity = '0.5';
-
-  const result = await callEndpoint('POST', '/products/filter', {
-    products: { [String(productId)]: { pinned } },
-    reload: true
-  });
-
-  if (btn) btn.style.opacity = '';
-
-  if (result.ok) {
-    log(`Producto ${productId}: ${pinned ? 'fijado' : 'desfijado'}`, 'ok');
-    setTimeout(() => loadMerchantsAndProducts(), 800);
-  } else {
-    log(`ERR: No se pudo ${pinned ? 'fijar' : 'desfijar'} producto ${productId}`, 'err');
-  }
-  _isToggling = false;
+  product.pinned = pinned;
+  if (pinned) product.visible = true;
+  _pendingProductIds.add(String(productId));
+  log(`Producto ${productId}: cambio pendiente (${pinned ? 'fijado' : 'desfijado'})`, 'info');
+  renderPendingProductChanges();
 }
 
 /** Cambia el modo de filtro con loading state y auto-refresh. */
 async function setFilterMode(mode) {
   if (_isToggling) return;
+  if (_pendingProductIds.size > 0) {
+    log('Guarda los filtros pendientes antes de cambiar el modo.', 'warn');
+    return;
+  }
   _isToggling = true;
   _currentFilterMode = mode;
   updateFilterModeButtons();
@@ -724,16 +1059,61 @@ function updateFilterModeButtons() {
   });
 }
 
-/** Guarda los filtros actuales en disco (persistencia). */
+/** Envia en una sola peticion el estado de todos los productos seleccionados. */
 async function saveFilters() {
-  if (!_productState) {
+  if (_isToggling || !_productState) {
     log('No hay productos cargados', 'warn');
     return;
   }
-  // La config ya se persiste al hacer POST /products/filter con reload:true
-  // Este boton es para feedback visual
-  log('Filtros guardados en la app.', 'ok');
-  loadMerchantsAndProducts();
+  if (_pendingProductIds.size === 0) {
+    log('No hay cambios de productos pendientes.', 'info');
+    return;
+  }
+
+  const merchant = getSelectedMerchant();
+  if (!merchant?.products?.length) {
+    log('El merchant seleccionado no tiene productos.', 'warn');
+    return;
+  }
+
+  const products = {};
+  for (const product of merchant.products) {
+    products[String(product.id)] = {
+      visible: product.visible === true,
+      pinned: product.pinned === true
+    };
+  }
+
+  _isToggling = true;
+  const saveButton = document.getElementById('btnSaveFilters');
+  const merchantSelect = document.getElementById('merchantSelect');
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = 'Guardando...';
+  }
+  if (merchantSelect) merchantSelect.disabled = true;
+
+  log(`Guardando ${_pendingProductIds.size} cambio(s) de productos...`, 'info');
+  const result = await callEndpoint('POST', '/products/filter', {
+    products,
+    filterMode: 'blacklist',
+    reload: true
+  });
+
+  if (result.ok) {
+    _pendingProductIds.clear();
+    _currentFilterMode = 'blacklist';
+    log('Filtros de productos aplicados correctamente.', 'ok');
+    await new Promise(resolve => setTimeout(resolve, 800));
+    await loadMerchantsAndProducts();
+  } else {
+    log('ERR: No se pudieron guardar los filtros de productos.', 'err');
+  }
+
+  _isToggling = false;
+  const currentSelect = document.getElementById('merchantSelect');
+  if (currentSelect) currentSelect.disabled = false;
+  if (!result.ok) renderPendingProductChanges();
 }
 
 /** Agrega un nuevo merchant ID a la configuracion. */
@@ -770,6 +1150,10 @@ async function removeMerchant(merchantId) {
 /** Fuerza la recarga de productos desde la API del backend. */
 async function reloadProducts() {
   if (_isToggling) return;
+  if (_pendingProductIds.size > 0) {
+    log('Guarda los filtros pendientes antes de recargar productos.', 'warn');
+    return;
+  }
   _isToggling = true;
 
   // Buscar todos los botones de recargar y mostrar loading
@@ -824,6 +1208,7 @@ async function playAlertAudio() {
     volume,
     force: true,
     displayText: null,
+    showOverlay: false,
   });
 
   if (!result.ok) {
