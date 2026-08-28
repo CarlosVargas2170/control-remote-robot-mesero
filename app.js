@@ -481,6 +481,43 @@ async function quickPlay(assetPath, localPath) {
   }
 }
 
+/** Muestra el carrusel desde el primer producto y reproduce un audio.
+ *  El asset debe existir en assets/audio/ dentro de mini-app-qr.
+ *  @param {string} assetPath - Ruta del asset en el robot.
+ *  @param {string} localPath - Copia local usada para oír el audio en el panel.
+ *  @param {Object} options - Opciones force, displayText y showOverlay.
+ */
+async function greetWithAudio(assetPath, localPath, options = {}) {
+  const asset = String(assetPath || '').trim();
+  if (!asset) {
+    log('Selecciona una ruta de audio para mostrar el carrusel', 'warn');
+    return { ok: false, error: 'asset_required' };
+  }
+
+  const fileName = asset.includes('/') ? asset.split('/').pop() : asset;
+  const displayText = options.displayText ?? AUDIO_LABELS[fileName] ?? null;
+  const params = new URLSearchParams({ asset });
+
+  if (options.force === true) params.set('force', 'true');
+  if (displayText) params.set('displayText', displayText);
+  if (options.showOverlay === false) params.set('showOverlay', 'false');
+
+  if (localPath) playLocal(localPath);
+
+  const result = await callEndpoint('POST', `/greet/audio?${params.toString()}`);
+  if (!result.ok) {
+    log('⚠️ No se pudo mostrar el carrusel con el audio seleccionado.', 'warn');
+    return result;
+  }
+
+  if (result.data?.audio === false) {
+    stopLocal();
+    log('⚠️ Robot en cooldown. Audio local detenido.', 'warn');
+  }
+
+  return result;
+}
+
 async function playCustomAudio() {
   const asset = document.getElementById('customAsset').value.trim();
   const volume = parseFloat(document.getElementById('customVolume').value) || 1.0;
@@ -511,6 +548,24 @@ async function playCustomAudio() {
   if (!result.ok) {
     log('⚠️ No se pudo reproducir en el robot. Sonando solo localmente.', 'warn');
   }
+}
+
+/** Usa el asset escrito en Audio personalizado y muestra también el carrusel. */
+async function playCustomGreeting() {
+  const asset = document.getElementById('customAsset').value.trim();
+  const force = document.getElementById('customForce').checked;
+  const displayText = document.getElementById('customDisplayText')?.value?.trim() || null;
+
+  if (!asset) {
+    log('Escribe la ruta del asset de audio', 'warn');
+    return;
+  }
+
+  const localPath = asset.replace(/\\/g, '/').replace(/^assets\//, '');
+  await greetWithAudio(asset, localPath, {
+    force,
+    displayText,
+  });
 }
 
 /** Alias conservado para enviar el texto exclusivamente al servicio TTS. */
