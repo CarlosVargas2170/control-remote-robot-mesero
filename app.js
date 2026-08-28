@@ -42,6 +42,11 @@ const AUDIO_LABELS = {
   'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar pedido con QR" para continuar con el pago',
   'there_is_an_order_2.mp3':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 2',
   'dance_to_sell.wav':               'Si me compras un café, te hago un baile',
+  'there_is_an_order_3.wav':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 3',
+  'there_is_an_order_4.wav':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 4',
+  'purchase_buy_dessert_kiky.wav':'Si me compras un postre de Kiky, te lo traigo enseguida',
+    'dance_to_sell_dessert_kiky.wav':'Si me compras un postre de Kiky, te hago un baile'
+
 };
 
 // ── Helpers ──
@@ -59,16 +64,26 @@ function loadSavedUrl() {
   if (saved) document.getElementById('baseUrl').value = saved;
 }
 
-/** Muestra u oculta el botón exclusivo de Mesero 2 según el servidor seleccionado. */
-function updateMesero2Visibility() {
+/** Boton de aviso de pedido correspondiente a cada servidor de mesero. */
+const ORDER_BUTTON_BY_MESERO_IP = {
+  '100.99.244.72': 'btn-order-mesero1',
+  '100.105.14.4': 'btn-order-mesero2',
+  '100.113.184.85': 'btn-order-mesero3',
+  '100.116.45.43': 'btn-order-mesero4',
+};
+
+/** Muestra unicamente el boton de pedido del mesero seleccionado. */
+function updateMeseroOrderVisibility() {
   const select = document.getElementById('baseUrl');
-  const btn = document.getElementById('btn-order-mesero2');
-  const btnMesero1 = document.getElementById('btn-order-mesero1');
-  if (btn && select) {
-    const isMesero2 = select.value.includes('100.105.14.4');
-    btn.style.display = isMesero2 ? '' : 'none';
-    btnMesero1.style.display = isMesero2 ? 'none' : '';
-  }
+  if (!select) return;
+
+  const selectedButtonId = Object.entries(ORDER_BUTTON_BY_MESERO_IP)
+    .find(([ip]) => select.value.includes(ip))?.[1] ?? 'btn-order-mesero1';
+
+  Object.values(ORDER_BUTTON_BY_MESERO_IP).forEach(buttonId => {
+    const button = document.getElementById(buttonId);
+    if (button) button.style.display = buttonId === selectedButtonId ? '' : 'none';
+  });
 }
 
 function log(message, type = 'info') {
@@ -304,6 +319,7 @@ async function callEndpoint(method, path, body = null, localAudioFile = null) {
 }
 
 async function testConnection() {
+  updateMeseroOrderVisibility();
   log('Probando conexion...', 'info');
   const result = await callEndpoint('GET', '/config');
   if (result.ok) {
@@ -1325,8 +1341,8 @@ function escHtml(str) {
 window.addEventListener('DOMContentLoaded', () => {
   loadSavedUrl();
   bindAudioButtons();
-  updateMesero2Visibility();
-  document.getElementById('baseUrl').addEventListener('change', updateMesero2Visibility);
+  updateMeseroOrderVisibility();
+  document.getElementById('baseUrl').addEventListener('change', updateMeseroOrderVisibility);
   updatePollingStatusUI({
     phase: 'idle',
     isPolling: false,
