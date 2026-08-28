@@ -208,6 +208,29 @@ function hideAudioBadge() {
 
 // ── Core ──
 
+/** Endpoints que muestran o inician la interaccion con el carrusel. */
+const MERCHANT_REQUIRED_ENDPOINTS = new Set([
+  '/greet',
+  '/greet/audio',
+  '/product',
+  '/play-question',
+]);
+
+/** Impide usar el carrusel hasta confirmar un merchant en el backend. */
+function requireSelectedMerchant() {
+  if (_selectedMerchantId === null) {
+    log('Primero debes seleccionar un comercio antes de mostrar el carrusel.', 'warn');
+    return false;
+  }
+
+  if (_isToggling) {
+    log('Espera a que termine la seleccion del comercio.', 'warn');
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Llama a un endpoint del robot.
  * @param {string} method - GET, POST, PUT, etc.
@@ -221,6 +244,11 @@ async function setEmotion(emotion) {
 
 
 async function callEndpoint(method, path, body = null, localAudioFile = null) {
+  const endpointPath = String(path).split('?')[0];
+  if (MERCHANT_REQUIRED_ENDPOINTS.has(endpointPath) && !requireSelectedMerchant()) {
+    return { ok: false, error: 'merchant_required' };
+  }
+
   const baseUrl = getBaseUrl();
   const url = `${baseUrl}${path}`;
   log(`${method} ${path} ...`, 'info');
@@ -282,8 +310,12 @@ async function testConnection() {
     const cfg = result.data?.data || {};
     const merchants = cfg.merchantIds || [];
     log(`Conectado! Merchants=${merchants.join(',')}, Product=${cfg.productId}`, 'ok');
-    // Cargar productos automaticamente tras conectar
-    loadMerchantsAndProducts();
+    // Exigir una seleccion explicita en cada nueva conexion. El merchant que
+    // venga habilitado desde el backend no se considera seleccionado en la UI.
+    _selectedMerchantId = null;
+    _productState = null;
+    _pendingProductIds.clear();
+    await loadMerchantsAndProducts();
     // Empezar a observar el estado de polling del robot
     startPollingStatusWatcher();
     refreshPollingStatus();
@@ -445,6 +477,8 @@ async function stopPolling() {
 
 /** Vincula automaticamente los elementos con data-audio="..." a callEndpoint. */
 function bindAudioButtons() {
+
+  
   document.querySelectorAll('[data-audio]').forEach(btn => {
     const path = btn.dataset.audio;
     const localFile = AUDIO_MAP[path] || null;
@@ -488,6 +522,12 @@ async function quickPlay(assetPath, localPath) {
  *  @param {Object} options - Opciones force, displayText y showOverlay.
  */
 async function greetWithAudio(assetPath, localPath, options = {}) {
+  // Validar antes de reproducir el audio local para evitar una reproduccion
+  // parcial cuando todavia no se confirmo el comercio.
+  if (!requireSelectedMerchant()) {
+    return { ok: false, error: 'merchant_required' };
+  }
+
   const asset = String(assetPath || '').trim();
   if (!asset) {
     log('Selecciona una ruta de audio para mostrar el carrusel', 'warn');
@@ -811,12 +851,10 @@ async function loadMerchantsAndProducts() {
   _pendingProductIds.clear();
   _currentFilterMode = _productState.filterMode || 'all';
   const merchants = Array.isArray(_productState.merchants) ? _productState.merchants : [];
-  const selectedStillExists = merchants.some(m => String(m.merchantId) === _selectedMerchantId);
+  const selectedStillExists = _selectedMerchantId !== null &&
+    merchants.some(m => String(m.merchantId) === _selectedMerchantId);
   if (!selectedStillExists) {
-    const initiallyEnabled = merchants.find(m => m.enabled === true);
-    _selectedMerchantId = initiallyEnabled
-      ? String(initiallyEnabled.merchantId)
-      : (merchants.length > 0 ? String(merchants[0].merchantId) : null);
+    _selectedMerchantId = null;
   }
 
   const selectedMerchant = merchants.find(m => String(m.merchantId) === _selectedMerchantId);
@@ -844,21 +882,24 @@ function renderMerchantList(merchants) {
     const id = String(m.merchantId);
     return `<option value="${escHtml(id)}" ${id === _selectedMerchantId ? 'selected' : ''}>[${escHtml(id)}] ${escHtml(m.merchantName)}</option>`;
   }).join('');
+  const placeholder = `<option value="" disabled ${_selectedMerchantId === null ? 'selected' : ''}>Selecciona un comercio</option>`;
 
   container.innerHTML = `
     <div class="merchant-picker">
       <span class="merchant-picker-icon" aria-hidden="true">🏪</span>
       <div class="merchant-picker-body">
-        <label class="merchant-select-label" for="merchantSelect">Comercio habilitado</label>
+        <label class="merchant-select-label" for="merchantSelect">Seleccionar comercio</label>
         <div class="merchant-select-wrap">
           <select id="merchantSelect" class="merchant-select" onchange="toggleMerchant(this.value, this)" ${_isToggling ? 'disabled' : ''}>
-            ${options}
+            ${placeholder}${options}
           </select>
         </div>
       </div>
     </div>
     <div class="merchant-selection-status">
-      ${selected ? `<span class="merchant-status-dot"></span><strong>${selected.visibleCount ?? 0}</strong> de ${selected.productCount ?? selected.products?.length ?? 0} productos visibles` : ''}
+      ${selected
+        ? `<span class="merchant-status-dot"></span><strong>${selected.visibleCount ?? 0}</strong> de ${selected.productCount ?? selected.products?.length ?? 0} productos visibles`
+        : 'Debes seleccionar un comercio para continuar'}
     </div>`;
 }
 
@@ -869,7 +910,7 @@ function renderProductList(merchants) {
 
   const selectedMerchant = merchants?.find(m => String(m.merchantId) === _selectedMerchantId);
   if (!selectedMerchant) {
-    container.innerHTML = '<p class="hint-text">Sin productos</p>';
+    container.innerHTML = '<p class="hint-text">Selecciona un comercio para mostrar sus productos</p>';
     return;
   }
 
