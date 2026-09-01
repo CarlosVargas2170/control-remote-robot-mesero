@@ -45,7 +45,12 @@ const AUDIO_LABELS = {
   'there_is_an_order_3.wav':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 3',
   'there_is_an_order_4.wav':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 4',
   'purchase_buy_dessert_kiky.wav':'Si me compras un postre de Kiky, te lo traigo enseguida',
-    'dance_to_sell_dessert_kiky.wav':'Si me compras un postre de Kiky, te hago un baile'
+    'dance_to_sell_dessert_kiky.wav':'Si me compras un postre de Kiky, te hago un baile',
+  'buy_gaseosa.wav':                'Hola, ¿que tal?, ¿Deseas una gaseosa?',
+  'buy_gaseosa_coca_cola.wav':        'Hola, ¿que tal?, ¿Deseas una gaseosa de Coca Cola?',
+  'buy_gaseosa_sprite.wav':           'Hola, ¿que tal?, ¿Deseas una gaseosa de Sprite?',
+  'buy_water.wav':                     'Hola, ¿que tal?, ¿Deseas una agua vital?',
+
 
 };
 
@@ -827,16 +832,23 @@ const _pendingProductIds = new Set();
 
 /** Configuracion del filtro automatico para el merchant Kiky. */
 const KIKY_MERCHANT_ID = '1';
+const MERCHANT_NEXUS_STORE = '81';
 const KIKY_VISIBLE_PRODUCT_IDS = new Set(['489150', '489161']);
 
 /** Muestra los audios correspondientes al merchant seleccionado. */
 function updateMerchantAudioSections() {
   const coffeeSection = document.getElementById('section-audios-coffee');
   const kikySection = document.getElementById('section-audios-kiky');
+  const nexusSection = document.getElementById('section-audios-nexus-store');
   const hasSelectedMerchant = _selectedMerchantId !== null;
   const isKiky = String(_selectedMerchantId) === KIKY_MERCHANT_ID;
+  const isNexus = String(_selectedMerchantId) === MERCHANT_NEXUS_STORE;
 
-  if (coffeeSection) {
+  if (nexusSection) {
+    nexusSection.style.display = hasSelectedMerchant && isNexus ? '' : 'none';
+  }
+
+  if (coffeeSection && !isNexus) {
     coffeeSection.style.display = hasSelectedMerchant && !isKiky ? '' : 'none';
   }
   if (kikySection) {

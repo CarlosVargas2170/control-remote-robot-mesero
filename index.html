@@ -163,6 +163,11 @@
               <span class="action-card-label">Besos</span>
               <span class="action-card-sub">Cara con besos</span>
             </button>
+            <button class="action-card" onclick="setEmotion('nexus')">
+              <span class="action-card-icon">🌐</span>
+              <span class="action-card-label">Nexus</span>
+              <span class="action-card-sub">Logo de Nexus</span>
+            </button>
             <!-- <button class="action-card" onclick="callEndpoint('POST','/proximity/away')">
               <span class="action-card-icon">🚶</span>
               <span class="action-card-label">Lejos</span>
@@ -429,6 +434,27 @@
           </div> -->
         </section>
 
+        <section class="block" id ="section-audios-nexus-store" style="display:none">
+            <div class="block-header">
+              <span class="block-icon">🔊</span>
+              <span class="block-title">Audios Nexus Store</span>
+          </div>
+          <div class="action-grid cols-3">
+            <button class="action-card" onclick="greetWithAudio('audio/buy_gaseosa.wav', 'audio/buy_gaseosa.wav')">
+              <span class="action-card-icon">🥤</span>
+              <span class="action-card-label">Hola, ¿que tal?, ¿Deseas una gaseosa?</span>
+            </button>
+            <button class="action-card" onclick="greetWithAudio('audio/buy_gaseosa_coca_cola.wav', 'audio/buy_gaseosa_coca_cola.wav')">
+              <span class="action-card-icon">🥤</span>
+              <span class="action-card-label">Hola, ¿que tal?, ¿Deseas una gaseosa de Coca Cola?</span>
+            </button>
+            <button class="action-card" onclick="greetWithAudio('audio/buy_gaseosa_sprite.wav', 'audio/buy_gaseosa_sprite.wav')">
+              <span class="action-card-icon">🥤</span>
+              <span class="action-card-label">Hola, ¿que tal?, ¿Deseas una gaseosa de Sprite?</span>
+            </button>
+          </div>
+        </section>
+
         <!-- ─── Configuración ─── -->
         <!-- <section class="block">
           <div class="block-header">
@@ -466,7 +492,7 @@
             <span class="block-title">Productos</span>
             <span class="filter-mode-badge" id="filterModeBadge">ALL</span>
           </div>
-          <div class="config-card">
+        <div class="config-card">
             <div class="filter-mode-row">
               <!-- <button class="btn-sm mode-btn active" data-mode="all" onclick="setFilterMode('all')">Mostrar todo</button> -->
               <button class="btn-sm mode-btn" data-mode="blacklist" onclick="setFilterMode('blacklist')">Productos</button>
