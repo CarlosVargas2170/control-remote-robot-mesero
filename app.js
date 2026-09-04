@@ -50,8 +50,11 @@ const AUDIO_LABELS = {
   'buy_gaseosa_coca_cola.wav':        'Hola, ¿que tal?, ¿Deseas una gaseosa de Coca Cola?',
   'buy_gaseosa_sprite.wav':           'Hola, ¿que tal?, ¿Deseas una gaseosa de Sprite?',
   'buy_water.wav':                     'Hola, ¿que tal?, ¿Deseas una agua vital?',
-
-
+  'here_your_order_enjoy.wav':     'Espero que esté justo como lo querías. ¡Que disfrutes tu pedido! fue un gusto atenderte',
+  'imaginate_tecno_nexus.wav':     'Te imaginas esta tecnología en tu negocio, Nexus Patio Tech lo hace posible',
+  'innovation_move_with_you.wav':   'Innovación que se mueve contigo, Nexus Patio Tech',
+  'nexus_great_experiencie.wav':    'Nexus Patio Tech, tecnología al servicio de una gran experiencia',
+  'thanks_good_bye.wav':            'Muchas gracias, hasta luego',
 };
 
 // ── Helpers ──
@@ -1310,8 +1313,14 @@ function toggleAlertasSelect() {
 }
 
 /** Reproduce la alerta seleccionada en el dropdown. */
-async function playAlertAudio() {
-  const select = document.getElementById('alertasDropdown');
+async function playAlertAudio(tipo = 'alerta') {
+  var select = document.getElementById('alertasDropdown');
+  var showText = false;
+  var textDisplay = null;
+  if (tipo.toLowerCase() === 'nexus') {
+    select = document.getElementById('nexusDropdown');
+    showText = true;
+    }
   const volume = parseFloat(document.getElementById('alertasVolume').value) || 1.0;
   const asset = select?.value?.trim();
 
@@ -1322,17 +1331,20 @@ async function playAlertAudio() {
 
   const fileName = asset.includes('/') ? asset.split('/').pop() : asset;
   const localFile = `audio/${fileName}`;
+  if (tipo.toLowerCase() === 'nexus') {
+    var textDisplay = AUDIO_LABELS[fileName] || null;
+  }
 
   // Reproducir local
   playLocal(localFile);
-
+  console.log(textDisplay, showText);
   // Enviar al robot
   const result = await callEndpoint('POST', '/audio/play', {
     asset,
     volume,
     force: true,
-    displayText: null,
-    showOverlay: false,
+    displayText: textDisplay,
+    showOverlay: showText,
   });
 
   if (!result.ok) {

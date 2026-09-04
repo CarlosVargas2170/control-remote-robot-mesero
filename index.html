@@ -197,6 +197,16 @@
               <span class="action-card-label">Indicar presionar botón de pago</span>
               <span class="action-card-sub">Botón de pago</span>
             </button>
+
+            <button class="action-card" onclick="quickPlay('audio/Aqui_tienes_Que_lo_d.wav', 'audio/Aqui_tienes_Que_lo_d.wav')">
+              <span class="action-card-icon">🎂</span>
+              <span class="action-card-label">Aquí tienes</span>
+              <span class="action-card-sub">¡Que lo disfrutes!</span>
+            </button>
+            <button class="action-card" onclick="quickPlay('audio/here_your_order_enjoy.wav', 'audio/here_your_order_enjoy.wav')">
+              <span class="action-card-icon">🎂</span>
+              <span class="action-card-label">Espero que esté justo como lo querías</span>
+            </button>
             <!-- <button class="action-card danger" onclick="callEndpoint('POST','/cancel-payment')">
               <span class="action-card-icon">✖️</span>
               <span class="action-card-label">Cancelar</span>
@@ -452,6 +462,32 @@
               <span class="action-card-icon">🥤</span>
               <span class="action-card-label">Hola, ¿que tal?, ¿Deseas una gaseosa de Sprite?</span>
             </button>
+          </div>
+        </section>
+
+         <section class="audio-custom" id ="section-audios-nexus">
+            <div class="block-header">
+              <span class="block-icon">🔊</span>
+              <span class="block-title">Audios Nexus Patio Tech</span>
+          </div>
+          <div style="flex-direction: row;">
+                <div class="audio-custom-row">
+                <select id="nexusDropdown" class="alertas-select">
+                  <option value="">-- Seleccionar sonido --</option>
+                  <option value="audio/imaginate_tecno_nexus.wav">Te imaginas esta tecnología en tu negocio, Nexus Patio Tech lo hace posible</option>
+                  <option value="audio/innovation_move_with_you.wav">Innovación que se mueve contigo, Nexus Patio Tech</option>
+                  <option value="audio/nexus_great_experiencie.wav">Nexus Patio Tech, tecnología al servicio de una gran experiencia</option>
+                  <!-- <option value="audio/attention_excuse_me.wav">⚠️ Atención, con permiso</option>
+                  <option value="audio/attention_with_service.wav">🤖 Robot en servicio</option>
+                  <option value="audio/please_return_prod.wav">↩️ Devolver producto</option>
+                  <option value="audio/help_chairs.wav">🪑 Ayuda con sillas</option>
+                  <option value="audio/presentation.wav">📢 Presentación</option> -->
+                </select>
+                <div class="audio-custom-row split">
+                  <input type="hidden" id="alertasVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
+                  <button class="btn-play" onclick="playAlertAudio('nexus')">▶️</button>
+                </div>
+            </div>
           </div>
         </section>
 
