@@ -1,0 +1,35 @@
+# NOTA: audio/ NO se ignora a propósito.
+# Los audios y GIFs son assets del producto: los reproduce el robot y los
+# consume la app del QR, así que deben viajar en el repositorio.
+# No los agregues aquí por error.
+
+# Dependencias (package.json solo usa `npx serve -s .`)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Variables de entorno: pueden contener URLs internas y tokens
+.env
+.env.*
+!.env.example
+
+# Archivos de trabajo y registros
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+Thumbs.db
+
+# Editores y asistentes de IA
+# El ignore global de cada máquina no aplica para los demás colaboradores.
+.claude/
+.cursor/
+.idea/
+.vscode/
+
+# Sistema operativo
+.DS_Store
+desktop.ini
+$RECYCLE.BIN/
