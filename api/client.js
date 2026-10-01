@@ -55,14 +55,16 @@ window.RoboticsApi = window.RoboticsApi || {};
    * @param {Object} [options]
    * @param {Object} [options.query] - Parámetros de la URL; se omiten los vacíos.
    * @param {Object} [options.body] - Se envía como JSON.
+   * @param {FormData} [options.form] - Se envía como multipart (subida de archivos).
    * @param {number} [options.timeoutMs]
    * @param {boolean} [options.raw] - Devuelve el Response sin leer (para streams de audio).
    * @returns {Promise<any>} JSON de la respuesta, null si es 204, o el Response si raw.
    */
-  async function request(method, path, { query, body, timeoutMs = DEFAULT_TIMEOUT_MS, raw = false } = {}) {
+  async function request(method, path, { query, body, form, timeoutMs = DEFAULT_TIMEOUT_MS, raw = false } = {}) {
     const headers = { 'Accept': raw ? '*/*' : 'application/json' };
     const token = RoboticsApi.config.getPanelToken();
     if (token) headers['X-Panel-Token'] = token;
+    // Con FormData el navegador pone el Content-Type multipart con su boundary.
     if (body !== undefined) headers['Content-Type'] = 'application/json';
 
     let response;
@@ -70,7 +72,7 @@ window.RoboticsApi = window.RoboticsApi || {};
       response = await fetch(buildUrl(path, query), {
         method,
         headers,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: form ?? (body !== undefined ? JSON.stringify(body) : undefined),
         signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
       });
     } catch (err) {
