@@ -192,7 +192,7 @@ const PanelLayout = (() => {
     grid.innerHTML = '';
     for (const emotion of emotions) {
       const card = actionCard({ icon: emotion.icon, label: emotion.label, subLabel: emotion.sub_label });
-      card.addEventListener('click', () => setEmotion(emotion.code));
+      card.addEventListener('click', () => setEmotion(emotion.code, emotion.gif_url));
       grid.appendChild(card);
     }
   }
@@ -264,7 +264,7 @@ const PanelLayout = (() => {
     for (const section of sections) {
       for (const button of section.buttons) {
         if (button.audio?.display_text) {
-          displayTextByFile[button.audio.file_path.split('/').pop()] = button.audio.display_text;
+          displayTextByFile[audioSource(button.audio).split('/').pop()] = button.audio.display_text;
         }
       }
     }
@@ -287,13 +287,22 @@ const PanelLayout = (() => {
    * - greet_with_audio: muestra el carrusel + audio (POST /greet/audio).
    * - endpoint: POST directo al endpoint del robot (/greet, /play-order, /audio/stop...).
    */
+  /**
+   * Ruta del audio: 'audio/x.wav' si viene incluido en la app (y en este panel), o la URL
+   * de Cloudinary si se subió desde media.html. El robot recibe lo mismo en `asset`.
+   */
+  function audioSource(audio) {
+    return audio.url || audio.file_path || '';
+  }
+
   async function runButton(button, { volume } = {}) {
     const audio = button.audio;
+    const source = audio ? audioSource(audio) : null;
     switch (button.action) {
       case 'quick_play': {
-        playLocal(audio.file_path);
+        playLocal(source);
         const result = await callEndpoint('POST', '/audio/play', {
-          asset: audio.file_path,
+          asset: source,
           volume: volume ?? audio.default_volume,
           force: button.force,
           displayText: audio.display_text,
@@ -303,14 +312,14 @@ const PanelLayout = (() => {
         return result;
       }
       case 'greet_with_audio':
-        return greetWithAudio(audio.file_path, audio.file_path, {
+        return greetWithAudio(source, source, {
           force: button.force,
           displayText: audio.display_text,
           showOverlay: audio.show_overlay,
         });
       case 'endpoint':
         if (button.endpoint === '/audio/stop') stopLocal();
-        return callEndpoint('POST', button.endpoint, null, audio ? audio.file_path : null);
+        return callEndpoint('POST', button.endpoint, null, source);
       default:
         log(`Acción desconocida en el botón "${button.label}": ${button.action}`, 'err');
         return { ok: false };

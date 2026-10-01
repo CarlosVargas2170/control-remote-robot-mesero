@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#0d1117">
   <title>Control Mesero Robot</title>
   <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="media.css?v=1">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -18,6 +19,7 @@
           <h1>Mesero Robot</h1>
         </div>
         <div class="header-badges">
+          <a class="conn-badge media-nav-link" href="media.html" title="Subir y editar audios y GIFs">📁 Medios</a>
           <button class="conn-badge backend-badge" id="backendStatus" type="button"
                   onclick="PanelLayout.toggleBackendSettings()" title="Configurar backend">
             <span class="dot" id="backendDot"></span>
@@ -219,15 +221,15 @@
 
   <!-- Cliente de robotics-backend (config y client primero: los demás dependen de ellos) -->
   <script src="api/config.js?v=2"></script>
-  <script src="api/client.js?v=1"></script>
+  <script src="api/client.js?v=2"></script>
   <script src="api/robots.js?v=1"></script>
   <script src="api/panel.js?v=1"></script>
-  <script src="api/catalog.js?v=1"></script>
+  <script src="api/catalog.js?v=2"></script>
   <script src="api/product-filter.js?v=1"></script>
   <script src="api/sales.js?v=1"></script>
   <script src="api/tts.js?v=1"></script>
-  <script src="app.js?v=17"></script>
+  <script src="app.js?v=18"></script>
   <!-- Robots, botones y emociones generados desde el backend -->
-  <script src="panel-layout.js?v=1"></script>
+  <script src="panel-layout.js?v=2"></script>
 </body>
 </html>

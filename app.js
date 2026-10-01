@@ -179,8 +179,11 @@ function requireSelectedMerchant() {
  * @param {Object|null} body - Body de la peticion (solo POST/PUT).
  * @param {string|null} localAudioFile - Ruta local del audio a reproducir si la respuesta es OK.
  */
-async function setEmotion(emotion) {
-  const result = await callEndpoint('POST', '/attract/set', { gif: emotion });
+/** Cambia la cara del robot. `url` solo viene en los GIFs subidos desde media.html (Cloudinary). */
+async function setEmotion(emotion, url = null) {
+  const body = { gif: emotion };
+  if (url) body.url = url;
+  await callEndpoint('POST', '/attract/set', body);
 }
 
 
