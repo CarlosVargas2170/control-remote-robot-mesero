@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Control Remoto - Mini App QR",
   "scripts": {
-    "start": "npx serve -s ."
+    "start": "npx serve ."
   },
   "engines": {
     "node": ">=18"
