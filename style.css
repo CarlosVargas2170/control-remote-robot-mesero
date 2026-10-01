@@ -1147,3 +1147,41 @@ html, body {
 #btnStopPolling.is-active-hint {
   outline: 1px solid rgba(248, 81, 73, 0.4);
 }
+
+/* ═══ BACKEND (robotics-backend) ═══ */
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.backend-badge {
+  cursor: pointer;
+  font-family: inherit;
+}
+.backend-badge:hover { border-color: var(--border-hover); color: var(--text); }
+
+/* Copia guardada: el backend no respondió y se usa la última respuesta buena */
+.dot.cached { background: var(--yellow); box-shadow: 0 0 6px rgba(210,153,34,0.4); }
+
+.backend-settings {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.backend-settings .url-input-wrap input[type="password"] {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 8px 0;
+  font-size: 12px;
+  min-width: 0;
+}
+.backend-settings .url-input-wrap input:focus { outline: none; }
+
+@media (max-width: 600px) {
+  .backend-settings { flex-direction: column; align-items: stretch; }
+}

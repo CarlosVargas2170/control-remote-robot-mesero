@@ -5,59 +5,8 @@
 
 const LS_KEY_URL = 'rc_baseUrl';
 
-// ── Mapeo endpoint → archivo local de audio ──
-
-const AUDIO_MAP = {
-  '/greet':             'audio/question_coffe.wav',
-  '/play-question':     'audio/question_coffe.wav',
-  '/play-thanks':       'audio/thanks_shopping.wav',
-  '/play-buy':          'audio/purchase_buy.wav',
-  '/play-order':        'audio/there_is_an_order.wav',
-  '/play-attention':    'audio/attention_excuse_me.wav',
-  '/play-collect-tray': 'audio/collect_tray.wav',
-  '/play-coffee':       'audio/here_is_coffee.wav',
-  '/play-order-2':      'audio/there_is_an_order_2.mp3',
-};
-
-// Etiquetas legibles para el badge visual
-const AUDIO_LABELS = {
-  'question_coffe.wav':      '¿Hola, quieres un café?',
-  'thanks_shopping.wav':     'Gracias por tu compra',
-  'purchase_buy.wav':        'Invitación a comprar',
-  'there_is_an_order.wav':   '¡Orden recibida!',
-  'attention_excuse_me.wav': 'Atención, disculpe',
-  'collect_tray.wav':        'Cobrar bandeja',
-  'here_is_coffee.wav':      '¡Aquí está tu café!',
-  // Kíky audios
-  'Aqui_tienes_Que_lo_d.wav':    'Aquí tienes. ¡Que lo disfrutes!',
-  'Hola_deseas_un_Brown.wav':    'Hola, ¿deseas un Brownie de Kiky?',
-  'Hola_deseas_un_Cremo.wav':    'Hola, ¿deseas un Cremoso 3 Leches de Kiky?',
-  'Muchas_graacias.wav':         'Muchas gracias',
-  'hello.wav':                   'Hola. ¿que tal?',
-  'hello_and_question_name.wav': 'Hola Me llamo Robot Mesero ¿Tú cómo te llamas?',
-  'attention_with_service.wav': '¡Con permiso por favor! Robot Mesero en servicio',
-
-  'please_return_prod.wav':       'Por favor, devuelve el producto a la bandeja',
-  'switch_product.wav':           'Con un solo dedo puedes deslizar hacia la derecha o izquierda para cambiar de producto',
-  'select_button_to_pay.wav':     'Puedes presionar el botón "Pagar pedido con QR" para continuar con el pago',
-  'there_is_an_order_2.mp3':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 2',
-  'dance_to_sell.wav':               'Si me compras un café, te hago un baile',
-  'there_is_an_order_3.wav':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 3',
-  'there_is_an_order_4.wav':      'Tengo un pedido ¿Lo puedes revisar? son los que dicen Robot Mesero 4',
-  'purchase_buy_dessert_kiky.wav':'Si me compras un postre de Kiky, te lo traigo enseguida',
-    'dance_to_sell_dessert_kiky.wav':'Si me compras un postre de Kiky, te hago un baile',
-  'buy_gaseosa.wav':                'Hola, ¿que tal?, ¿Deseas una gaseosa?',
-  'buy_gaseosa_coca_cola.wav':        'Hola, ¿que tal?, ¿Deseas una gaseosa de Coca Cola?',
-  'buy_gaseosa_sprite.wav':           'Hola, ¿que tal?, ¿Deseas una gaseosa de Sprite?',
-  'buy_water.wav':                     'Hola, ¿que tal?, ¿Deseas una agua vital?',
-  'here_your_order_enjoy.wav':     'Espero que esté justo como lo querías. ¡Que disfrutes tu pedido! fue un gusto atenderte',
-  'imaginate_tecno_nexus.wav':     'Te imaginas esta tecnología en tu negocio, Nexus Patio Tech lo hace posible',
-  'innovation_move_with_you.wav':   'Innovación que se mueve contigo, Nexus Patio Tech',
-  'nexus_great_experiencie.wav':    'Nexus Patio Tech, tecnología al servicio de una gran experiencia',
-  'thanks_good_bye.wav':            'Muchas gracias, hasta luego',
-  'product_kiky.wav':               'Hola, ¿Deseas algún producto de Kiky?',
-  'product-pollo-kiky.wav':         '¡Hola! ¿Se les antoja un sabroso pollo de Pollos Kiky para hoy? Pueden pedir aquí mismo.'
-};
+// Los audios, sus textos y los botones vienen del backend (GET /api/panel);
+// ver panel-layout.js. Los archivos siguen en audio/ para sonar en local.
 
 // ── Helpers ──
 
@@ -67,33 +16,6 @@ function getBaseUrl() {
   if (!url) url = 'http://localhost:8080';
   localStorage.setItem(LS_KEY_URL, url);
   return url.replace(/\/$/, '');
-}
-
-function loadSavedUrl() {
-  const saved = localStorage.getItem(LS_KEY_URL);
-  if (saved) document.getElementById('baseUrl').value = saved;
-}
-
-/** Boton de aviso de pedido correspondiente a cada servidor de mesero. */
-const ORDER_BUTTON_BY_MESERO_IP = {
-  '100.99.244.72': 'btn-order-mesero1',
-  '100.105.14.4': 'btn-order-mesero2',
-  '100.113.184.85': 'btn-order-mesero3',
-  '100.116.45.43': 'btn-order-mesero4',
-};
-
-/** Muestra unicamente el boton de pedido del mesero seleccionado. */
-function updateMeseroOrderVisibility() {
-  const select = document.getElementById('baseUrl');
-  if (!select) return;
-
-  const selectedButtonId = Object.entries(ORDER_BUTTON_BY_MESERO_IP)
-    .find(([ip]) => select.value.includes(ip))?.[1] ?? 'btn-order-mesero1';
-
-  Object.values(ORDER_BUTTON_BY_MESERO_IP).forEach(buttonId => {
-    const button = document.getElementById(buttonId);
-    if (button) button.style.display = buttonId === selectedButtonId ? '' : 'none';
-  });
 }
 
 function log(message, type = 'info') {
@@ -127,8 +49,8 @@ function setConnectionStatus(online) {
 
 let _ttsOnline = false;
 
-/** Actualiza el indicador visual de disponibilidad del servicio TTS (:9000). */
-function setTtsStatus(online) {
+/** Actualiza el indicador visual de disponibilidad del servicio TTS del robot. */
+function setTtsStatus(online, offlineLabel = 'TTS Offline') {
   _ttsOnline = online;
   const dot = document.getElementById('ttsDot');
   const text = document.getElementById('ttsText');
@@ -140,36 +62,30 @@ function setTtsStatus(online) {
     if (btn) btn.disabled = false;
   } else {
     dot.className = 'dot offline';
-    text.textContent = 'TTS Offline';
+    text.textContent = offlineLabel;
     if (btn) btn.disabled = true;
   }
 }
 
-/** Verifica la salud del servicio TTS en http://{host}:9000/health. */
+/** Verifica, a través del backend, el TTS asignado al robot seleccionado. */
 async function checkTtsService() {
   setTtsStatus(false); // por defecto, offline hasta confirmar
+  const robot = PanelLayout.getSelectedRobot();
+  if (!robot) return;
+  if (!robot.tts_available) {
+    setTtsStatus(false, 'Sin TTS');
+    log(`${robot.name} no tiene servicio TTS asignado.`, 'info');
+    return;
+  }
   try {
-    const baseUrl = getBaseUrl();
-    const host = new URL(baseUrl).hostname;
-    const res = await fetch(`http://${host}:9000/health`, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(3000),
-    });
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-
-    const health = await res.json();
+    const health = await RoboticsApi.tts.health(robot.code);
     if (health.status !== 'ok') {
       throw new Error(`Estado inesperado: ${health.status ?? 'desconocido'}`);
     }
-
     setTtsStatus(true);
     const gpuStatus = health.gpu ? 'GPU activa' : 'sin GPU';
     const speakers = health.speakers_loaded ?? 0;
-    log(`Servicio TTS disponible en ${host}:9000 (${gpuStatus}, speakers: ${speakers})`, 'ok');
+    log(`Servicio TTS de ${robot.name} disponible (${gpuStatus}, speakers: ${speakers})`, 'ok');
   } catch (err) {
     setTtsStatus(false);
     log(`Servicio TTS no disponible: ${err.message}`, 'warn');
@@ -220,7 +136,7 @@ function showAudioBadge(filePath) {
 
   // Extraer nombre legible: "audio/question_coffe.wav" → "¿Quieres un café?"
   const fileName = filePath.includes('/') ? filePath.split('/').pop() : filePath;
-  const label = AUDIO_LABELS[fileName] || fileName.replace('.wav', '').replace(/_/g, ' ');
+  const label = PanelLayout.labelFor(fileName) || fileName.replace(/\.(wav|mp3)$/, '').replace(/_/g, ' ');
   text.textContent = label;
   badge.style.display = 'flex';
 }
@@ -329,7 +245,6 @@ async function callEndpoint(method, path, body = null, localAudioFile = null) {
 }
 
 async function testConnection() {
-  updateMeseroOrderVisibility();
   log('Probando conexion...', 'info');
   const result = await callEndpoint('GET', '/config');
   if (result.ok) {
@@ -500,48 +415,6 @@ async function stopPolling() {
   }
 }
 
-// ── Bind automático de botones de audio ──
-
-/** Vincula automaticamente los elementos con data-audio="..." a callEndpoint. */
-function bindAudioButtons() {
-
-  
-  document.querySelectorAll('[data-audio]').forEach(btn => {
-    const path = btn.dataset.audio;
-    const localFile = AUDIO_MAP[path] || null;
-    btn.addEventListener('click', () => {
-      callEndpoint('POST', path, null, localFile);
-    });
-  });
-}
-
-// ── Audio custom ──
-
-/** Reproduce un audio con un solo click: local + robot en paralelo.
- *  @param {string} assetPath - Ruta del asset en el robot (ej: 'audio/kiky/...')
- *  @param {string} localPath - Ruta del archivo local (ej: 'audio/kiky/...')
- */
-async function quickPlay(assetPath, localPath) {
-  // Reproducir localmente
-  playLocal(localPath);
-
-  // Extraer nombre del archivo para el displayText en el robot.
-  const fileName = localPath.includes('/') ? localPath.split('/').pop() : localPath;
-  const displayText = AUDIO_LABELS[fileName] || null;
-
-  // Enviar al robot
-  const result = await callEndpoint('POST', '/audio/play', {
-    asset: assetPath,
-    volume: 1.0,
-    force: false,
-    displayText: displayText,
-  });
-
-  if (!result.ok) {
-    log('⚠️ Robot no reprodujo. Sonando solo local.', 'warn');
-  }
-}
-
 /** Muestra el carrusel desde el primer producto y reproduce un audio.
  *  El asset debe existir en assets/audio/ dentro de mini-app-qr.
  *  @param {string} assetPath - Ruta del asset en el robot.
@@ -562,7 +435,7 @@ async function greetWithAudio(assetPath, localPath, options = {}) {
   }
 
   const fileName = asset.includes('/') ? asset.split('/').pop() : asset;
-  const displayText = options.displayText ?? AUDIO_LABELS[fileName] ?? null;
+  const displayText = options.displayText ?? PanelLayout.labelFor(fileName);
   const params = new URLSearchParams({ asset });
 
   if (options.force === true) params.set('force', 'true');
@@ -726,7 +599,8 @@ async function sendToServiceVoice() {
     return;
   }
 
-  if (!_ttsOnline) {
+  const robotCode = PanelLayout.getSelectedRobotCode();
+  if (!_ttsOnline || !robotCode) {
     log('Servicio TTS no disponible. Conecta primero.', 'warn');
     return;
   }
@@ -753,32 +627,9 @@ async function sendToServiceVoice() {
   log(`Enviando texto al servicio TTS: "${text}"`, 'info');
   log(`Audio del navegador activo a ${audioContext.sampleRate} Hz`, 'info');
 
-  const baseUrl = getBaseUrl();
-  const host = new URL(baseUrl).hostname;
-  const TTS_URL = `http://${host}:9000/synthesize/play`;
-  const TTS_TOKEN = '501a8d0c5fe72d11e5af9e246548e3ec501458f61b770558813552aae7ce89e1';
-
   try {
-    const res = await fetch(TTS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/octet-stream',
-        'Authorization': `Bearer ${TTS_TOKEN}`,
-      },
-      body: JSON.stringify({
-        text: text,
-        speaker_id: 'default',
-        language: 'es',
-      }),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      log(`ERR TTS ${res.status}: ${errText}`, 'err');
-      return;
-    }
-
+    // El backend llama al TTS del robot con su token y devuelve el mismo stream PCM.
+    const res = await RoboticsApi.tts.synthesize(robotCode, text);
     await playTtsStream(res, audioContext);
     log('Texto enviado y audio TTS reproducido correctamente', 'ok');
     textarea.value = '';
@@ -837,27 +688,25 @@ const _pendingProductIds = new Set();
 
 /** Configuracion del filtro automatico para el merchant Kiky. */
 const KIKY_MERCHANT_ID = '1';
-const MERCHANT_NEXUS_STORE = '81';
 const KIKY_VISIBLE_PRODUCT_IDS = new Set(['489150', '489161']);
 
-/** Muestra los audios correspondientes al merchant seleccionado. */
+/** Vuelve a pedir los botones al backend para el comercio seleccionado. */
 function updateMerchantAudioSections() {
-  const coffeeSection = document.getElementById('section-audios-coffee');
-  const kikySection = document.getElementById('section-audios-kiky');
-  const nexusSection = document.getElementById('section-audios-nexus-store');
-  const hasSelectedMerchant = _selectedMerchantId !== null;
-  const isKiky = String(_selectedMerchantId) === KIKY_MERCHANT_ID;
-  const isNexus = String(_selectedMerchantId) === MERCHANT_NEXUS_STORE;
+  PanelLayout.loadLayout();
+}
 
-  if (nexusSection) {
-    nexusSection.style.display = hasSelectedMerchant && isNexus ? '' : 'none';
-  }
-
-  if (coffeeSection && !isNexus) {
-    coffeeSection.style.display = hasSelectedMerchant && !isKiky ? '' : 'none';
-  }
-  if (kikySection) {
-    kikySection.style.display = hasSelectedMerchant && isKiky ? '' : 'none';
+/**
+ * Guarda en el backend el filtro aplicado al robot, para que lo recupere al
+ * reiniciarse. Si falla, el filtro ya quedó aplicado en el robot: solo se avisa.
+ */
+async function persistProductFilter(changes) {
+  const robotCode = PanelLayout.getSelectedRobotCode();
+  if (!robotCode) return;
+  try {
+    await RoboticsApi.productFilter.save(robotCode, changes);
+    log('Filtro guardado en el backend.', 'ok');
+  } catch (err) {
+    log(`El filtro se aplicó en el robot, pero no se guardó en el backend: ${err.message}`, 'warn');
   }
 }
 
@@ -1112,6 +961,7 @@ async function toggleMerchant(merchantId, select) {
 
   if (result.ok) {
     log(`OK: Merchant ${selectedId} habilitado`, 'ok');
+    persistProductFilter({ selectedMerchantId: Number(selectedId) });
     await new Promise(resolve => setTimeout(resolve, 800));
     await loadMerchantsAndProducts();
   } else {
@@ -1174,6 +1024,7 @@ async function setFilterMode(mode) {
 
   if (result.ok) {
     log(`OK: Modo de filtro: ${mode}`, 'ok');
+    persistProductFilter({ filterMode: mode });
     setTimeout(() => loadMerchantsAndProducts(), 800);
   } else {
     log(`ERR: No se pudo cambiar el modo de filtro`, 'err');
@@ -1233,6 +1084,15 @@ async function saveFilters() {
     _pendingProductIds.clear();
     _currentFilterMode = 'blacklist';
     log('Filtros de productos aplicados correctamente.', 'ok');
+    await persistProductFilter({
+      filterMode: 'blacklist',
+      products: merchant.products.map(product => ({
+        id: product.id,
+        merchantId: merchant.merchantId,
+        visible: product.visible === true,
+        pinned: product.pinned === true,
+      })),
+    });
     await new Promise(resolve => setTimeout(resolve, 800));
     await loadMerchantsAndProducts();
   } else {
@@ -1305,55 +1165,6 @@ async function reloadProducts() {
   _isToggling = false;
 }
 
-/** Muestra/oculta el panel de selección de alertas según el toggle. */
-function toggleAlertasSelect() {
-  const toggle = document.getElementById('alertasToggle');
-  const panel = document.getElementById('alertasPanel');
-  if (toggle && panel) {
-    panel.style.display = toggle.checked ? 'flex' : 'none';
-  }
-}
-
-/** Reproduce la alerta seleccionada en el dropdown. */
-async function playAlertAudio(tipo = 'alerta') {
-  var select = document.getElementById('alertasDropdown');
-  var showText = false;
-  var textDisplay = null;
-  if (tipo.toLowerCase() === 'nexus') {
-    select = document.getElementById('nexusDropdown');
-    showText = true;
-    }
-  const volume = parseFloat(document.getElementById('alertasVolume').value) || 1.0;
-  const asset = select?.value?.trim();
-
-  if (!asset) {
-    log('Selecciona una alerta del dropdown', 'warn');
-    return;
-  }
-
-  const fileName = asset.includes('/') ? asset.split('/').pop() : asset;
-  const localFile = `audio/${fileName}`;
-  if (tipo.toLowerCase() === 'nexus') {
-    var textDisplay = AUDIO_LABELS[fileName] || null;
-  }
-
-  // Reproducir local
-  playLocal(localFile);
-  console.log(textDisplay, showText);
-  // Enviar al robot
-  const result = await callEndpoint('POST', '/audio/play', {
-    asset,
-    volume,
-    force: true,
-    displayText: textDisplay,
-    showOverlay: showText,
-  });
-
-  if (!result.ok) {
-    log('⚠️ Robot no reprodujo. Sonando solo local.', 'warn');
-  }
-}
-
 /** Escapa HTML para prevenir XSS. */
 function escHtml(str) {
   if (!str) return '';
@@ -1365,15 +1176,11 @@ function escHtml(str) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  loadSavedUrl();
-  bindAudioButtons();
-  updateMeseroOrderVisibility();
-  document.getElementById('baseUrl').addEventListener('change', updateMeseroOrderVisibility);
   updatePollingStatusUI({
     phase: 'idle',
     isPolling: false,
     label: 'Polling detenido',
     counter: { totalSales: 0, totalAmount: 0 },
   });
-  log('Panel de control listo. Configura la IP y pulsa Conectar.', 'info');
+  log('Panel de control listo. Elige un robot y pulsa Conectar.', 'info');
 });

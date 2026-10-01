@@ -1,9 +1,11 @@
 /**
  * Configuración de conexión con robotics-backend.
  *
- * La URL del backend y el token del panel se guardan en el navegador del
- * operador (localStorage), nunca en el código: el token lo ingresa el
- * operador una sola vez.
+ * El panel trae la URL y el token por defecto para que el operador no tenga
+ * que configurar nada. Lo guardado desde "Backend ⚙️" (localStorage) tiene
+ * prioridad, así se puede apuntar a otro backend sin tocar el código.
+ *
+ * Si se rota PANEL_TOKEN en el backend, hay que actualizar DEFAULT_PANEL_TOKEN.
  */
 window.RoboticsApi = window.RoboticsApi || {};
 
@@ -11,6 +13,7 @@ RoboticsApi.config = (() => {
   const LS_BACKEND_URL = 'rb_backendUrl';
   const LS_PANEL_TOKEN = 'rb_panelToken';
   const DEFAULT_BACKEND_URL = 'http://localhost:8090';
+  const DEFAULT_PANEL_TOKEN = 'gGHFfOda2KUbh9UOxXKqkNW1OVCHfgRqsmyUJ9lkylM';
 
   /** localStorage puede fallar (modo privado, almacenamiento bloqueado). */
   function read(key) {
@@ -34,14 +37,14 @@ RoboticsApi.config = (() => {
   }
 
   function getPanelToken() {
-    return read(LS_PANEL_TOKEN) || '';
+    return read(LS_PANEL_TOKEN) || DEFAULT_PANEL_TOKEN;
   }
 
   function setPanelToken(token) {
     write(LS_PANEL_TOKEN, String(token || '').trim());
   }
 
-  /** Olvida el token (por ejemplo, al cerrar sesión o si el backend lo rechaza). */
+  /** Olvida el token guardado y vuelve al de por defecto. */
   function clearPanelToken() {
     write(LS_PANEL_TOKEN, '');
   }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0d1117">
   <title>Control Mesero Robot</title>
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -17,24 +17,39 @@
           <span class="header-logo">🤖</span>
           <h1>Mesero Robot</h1>
         </div>
-        <div class="conn-badge" id="connStatus">
-          <span class="dot" id="connDot"></span>
-          <span id="connText">Offline</span>
+        <div class="header-badges">
+          <button class="conn-badge backend-badge" id="backendStatus" type="button"
+                  onclick="PanelLayout.toggleBackendSettings()" title="Configurar backend">
+            <span class="dot" id="backendDot"></span>
+            <span id="backendText">Backend</span>
+            <span aria-hidden="true">⚙️</span>
+          </button>
+          <div class="conn-badge" id="connStatus">
+            <span class="dot" id="connDot"></span>
+            <span id="connText">Offline</span>
+          </div>
         </div>
+      </div>
+
+      <!-- Configuración del backend: se muestra si falta el token o al pulsar ⚙️ -->
+      <div class="backend-settings" id="backendSettings" style="display:none">
+        <div class="url-input-wrap">
+          <span class="url-icon">🌐</span>
+          <input type="text" id="backendUrlInput" placeholder="http://localhost:8090" autocomplete="off">
+        </div>
+        <div class="url-input-wrap">
+          <span class="url-icon">🔑</span>
+          <input type="password" id="panelTokenInput" placeholder="Token del panel" autocomplete="off">
+        </div>
+        <button class="btn-connect" type="button" onclick="PanelLayout.saveBackendSettings()">Guardar</button>
       </div>
 
       <div class="url-bar">
         <div class="url-input-wrap">
           <span class="url-icon">🔌</span>
+          <!-- Robots cargados desde el backend (GET /api/robots) -->
           <select id="baseUrl">
-            <option value="http://100.99.244.72:5050">Mesero 1</option>
-            <option value="http://100.105.14.4:5050">Mesero 2</option>
-            <!-- <option value="http://100.85.93.59:5050">Mesero 3</option> -->
-            <option value="http://100.113.184.85:5050">Mesero 3</option>
-            <option value="http://100.116.45.43:5050">Mesero 4</option>
-            <option value="http://100.87.64.123:5050">Mesero 6</option>
-            <option value="http://localhost:5050">Local</option>
-            <!-- <option value="http://192.168.21.127:5050">Local</option> -->
+            <option value="">Cargando robots...</option>
           </select>
         </div>
         <button class="btn-connect" onclick="testConnection()">Conectar</button>
@@ -97,416 +112,22 @@
           </div> -->
         </section>
 
-        <!-- ─── Control ─── -->
+        <!-- ─── Gifs (emociones desde GET /api/panel) ─── -->
         <section class="block">
           <div class="block-header">
             <span class="block-icon">📡</span>
             <span class="block-title">Gifs</span>
           </div>
-          <div class="action-grid">
-            <button class="action-card" onclick="setEmotion('normal')">
-              <span class="action-card-icon">🙂</span>
-              <span class="action-card-label">Normal</span>
-              <span class="action-card-sub">Cara normal</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('happy')">
-              <span class="action-card-icon">😊</span>
-              <span class="action-card-label">feliz</span>
-              <span class="action-card-sub">Cara feliz</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('angry')">
-              <span class="action-card-icon">😠</span>
-              <span class="action-card-label">Enojado</span>
-              <span class="action-card-sub">Cara enojada</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('cry')">
-              <span class="action-card-icon">😢</span>
-              <span class="action-card-label">Llorando</span>
-              <span class="action-card-sub">Cara llorando</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('love')">
-              <span class="action-card-icon">😍</span>
-              <span class="action-card-label">Amor</span>
-              <span class="action-card-sub">Cara de amor</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('money')">
-              <span class="action-card-icon">🤑</span>
-              <span class="action-card-label">Dinero</span>
-              <span class="action-card-sub">Cara de dinero</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('sad')">
-              <span class="action-card-icon">😔</span>
-              <span class="action-card-label">Triste</span>
-              <span class="action-card-sub">Cara triste</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('sleep')">
-              <span class="action-card-icon">😴</span>
-              <span class="action-card-label">Dormido</span>
-              <span class="action-card-sub">Cara dormida</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('confused')">
-              <span class="action-card-icon">😕</span>
-              <span class="action-card-label">Confundido</span>
-              <span class="action-card-sub">Cara confundida</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('six-seven')">
-              <span class="action-card-icon">6-7</span>
-              <span class="action-card-label">SixSeven</span>
-              <span class="action-card-sub">Six Seven</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('aura')">
-              <span class="action-card-icon">✨</span>
-              <span class="action-card-label">Aura</span>
-              <span class="action-card-sub">Cara con aura</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('kiss')">
-              <span class="action-card-icon">😘</span>
-              <span class="action-card-label">Besos</span>
-              <span class="action-card-sub">Cara con besos</span>
-            </button>
-            <button class="action-card" onclick="setEmotion('nexus')">
-              <span class="action-card-icon">🌐</span>
-              <span class="action-card-label">Nexus</span>
-              <span class="action-card-sub">Logo de Nexus</span>
-            </button>
-            <!-- <button class="action-card" onclick="callEndpoint('POST','/proximity/away')">
-              <span class="action-card-icon">🚶</span>
-              <span class="action-card-label">Lejos</span>
-              <span class="action-card-sub">Volver a reposo</span>
-            </button> -->
+          <div class="action-grid" id="emotionGrid">
+            <p class="hint-text">Cargando...</p>
           </div>
         </section>
 
-        <section class="block">
-          <div class="block-header">
-            <span class="block-icon">🖥️</span>
-            <span class="block-title">Pantalla</span>
-          </div>
-          <div class="action-grid">
-            <button class="action-card accent" data-audio="/greet">
-              <span class="action-card-icon">🗣️</span>
-              <span class="action-card-label">Café + imagen</span>
-              <span class="action-card-sub">Producto + audio</span>
-            </button>
-            <button class="action-card" onclick="callEndpoint('POST','/product')">
-              <span class="action-card-icon">🖼️</span>
-              <span class="action-card-label">Solo imagen del producto</span>
-              <span class="action-card-sub">Solo imagen</span>
-            </button>
-            <button class="action-card" onclick="quickPlay('audio/select_button_to_pay.wav', 'audio/select_button_to_pay.wav')">
-              <span class="action-card-icon">💳</span>
-              <span class="action-card-label">Indicar presionar botón de pago</span>
-              <span class="action-card-sub">Botón de pago</span>
-            </button>
-
-            <button class="action-card" onclick="quickPlay('audio/Aqui_tienes_Que_lo_d.wav', 'audio/Aqui_tienes_Que_lo_d.wav')">
-              <span class="action-card-icon">🎂</span>
-              <span class="action-card-label">Aquí tienes</span>
-              <span class="action-card-sub">¡Que lo disfrutes!</span>
-            </button>
-            <button class="action-card" onclick="quickPlay('audio/here_your_order_enjoy.wav', 'audio/here_your_order_enjoy.wav')">
-              <span class="action-card-icon">🎂</span>
-              <span class="action-card-label">Espero que esté justo como lo querías</span>
-            </button>
-            <!-- <button class="action-card danger" onclick="callEndpoint('POST','/cancel-payment')">
-              <span class="action-card-icon">✖️</span>
-              <span class="action-card-label">Cancelar</span>
-              <span class="action-card-sub">Cancelar pago</span>
-            </button> -->
-          </div>
-        </section>
-
-
-        <!-- ─── Audios ─── -->
-
-        <section class="block">
-         <div class="block-header">
-            <span class="block-icon">🔊</span>
-            <span class="block-title">Saludos e Interacciones</span>
+        <!-- ─── Botones de audio y pantalla (secciones desde GET /api/panel) ───
+             Se arman según el robot elegido y el comercio seleccionado. -->
+        <div id="dynamicSections">
+          <p class="hint-text">Cargando botones...</p>
         </div>
-        <div class="action-grid cols-3">
-            <button class="action-card" onclick="quickPlay('audio/hello.wav', 'audio/hello.wav')">
-              <span class="action-card-icon">👋</span>
-              <span class="action-card-label">¿Hola, que tal?</span>
-            </button>
-
-            <button class="action-card" onclick="quickPlay('audio/hello_and_question_name.wav', 'audio/hello_and_question_name.wav')">
-              <span class="action-card-icon">👋</span>
-              <span class="action-card-label">Hola Me llamo Robot Mesero ¿Tú cómo te llamas?</span>
-            </button>
-            <button class="action-card" onclick="quickPlay('audio/switch_product.wav', 'audio/switch_product.wav')">
-              <span class="action-card-icon">�</span>
-              <span class="action-card-label">Cambiar de producto</span>
-            </button>
-
-            <button class="action-card" data-audio="/play-order" id="btn-order-mesero1">
-              <span class="action-card-icon">🔔</span>
-              <span class="action-card-label">Tengo un pedido, ¿Lo puedes revisar?, son los que dicen Robot Mesero</span>
-            </button>
-
-            <button class="action-card" id="btn-order-mesero2" onclick="quickPlay('audio/there_is_an_order_2.mp3', 'audio/there_is_an_order_2.mp3')" style="display:none">
-              <span class="action-card-icon">🔔</span>
-              <span class="action-card-label">[Mesero 2] Tengo un pedido, ¿Lo puedes revisar?</span>
-            </button>
-
-            <button class="action-card" id="btn-order-mesero3" onclick="quickPlay('audio/there_is_an_order_3.wav', 'audio/there_is_an_order_3.wav')" style="display:none">
-              <span class="action-card-icon">🔔</span>
-              <span class="action-card-label">[Mesero 3] Tengo un pedido, ¿Lo puedes revisar?</span>
-            </button>
-
-            <button class="action-card" id="btn-order-mesero4" onclick="quickPlay('audio/there_is_an_order_4.wav', 'audio/there_is_an_order_4.wav')" style="display:none">
-              <span class="action-card-icon">🔔</span>
-              <span class="action-card-label">[Mesero 4] Tengo un pedido, ¿Lo puedes revisar?</span>
-            </button>
-
-            <button class="action-card" data-audio="/play-thanks">
-              <span class="action-card-icon">🙏</span>
-              <span class="action-card-label">Gracias por tu compra, enseguida te lo traigo</span>
-            </button>
-
-            <button class="action-card danger" onclick="stopLocal(); callEndpoint('POST','/audio/stop')">
-              <span class="action-card-icon">🔇</span>
-              <span class="action-card-label">Detener</span>
-            </button>
-             <button class="action-card" onclick="quickPlay('audio/Muchas_graacias.wav', 'audio/Muchas graacias.wav')">
-              <span class="action-card-icon">🙏</span>
-              <span class="action-card-label">Gracias</span>
-              <span class="action-card-sub">Muchas gracias</span>
-            </button>
-              <button class="action-card" data-audio="/play-collect-tray">
-              <span class="action-card-icon">🍽️</span>
-              <span class="action-card-label">¿Hola, puedo recoger tu bandeja?</span>
-            </button>
-
-          </div>
-        </section>
-        <section class="block">
-          <div class="block-header">
-            <span class="block-icon">🔊</span>
-            <span class="block-title">Alertas y sonidos</span>
-          </div>
-
-          <!-- Toggle + Select para más alertas -->
-          <div class="alertas-extra">
-            <label class="toggle-switch">
-              <input type="checkbox" id="alertasToggle" onchange="toggleAlertasSelect()">
-              <span class="toggle-slider"></span>
-            </label>
-            <span class="alertas-extra-label">Sirenas/sonidos</span>
-          </div>
-
-          <div id="alertasPanel" class="audio-custom" style="display:none">
-            <div class="audio-custom-row">
-              <select id="alertasDropdown" class="alertas-select">
-                <option value="">-- Seleccionar sirena --</option>
-                <option value="audio/alert_siren.mp3">🚨 Sirena de alerta</option>
-                <option value="audio/bocina_car.mp3">🚗 Bocina de carro</option>
-                <option value="audio/policy_siren.mp3">🚔 Sirena de policía</option>
-                <option value="audio/six-seven.wav">🎸 Six Seven</option>
-                <option value="audio/aura_farming.mp3">🎵 Farmear aura</option>
-                <option value="audio/chipi_chipi_chapa.mp3">🎵 Chipi chapa</option>
-                <option value="audio/fahh.wav">🎵 Fahh</option>
-                <option value="audio/reto_tokio.mp3">🎵 Reto Tokio</option>
-                <option value="audio/audio_music_1.mp3">🎵 Audio 1</option>
-                <option value="audio/pedro_pedro.mp3">🎵 Pedro pedro</option>
-                <option value="audio/miau_miau.mp3">🎵 Miau miau</option>
-                <!-- <option value="audio/attention_excuse_me.wav">⚠️ Atención, con permiso</option>
-                <option value="audio/attention_with_service.wav">🤖 Robot en servicio</option>
-                <option value="audio/please_return_prod.wav">↩️ Devolver producto</option>
-                <option value="audio/help_chairs.wav">🪑 Ayuda con sillas</option>
-                <option value="audio/presentation.wav">📢 Presentación</option> -->
-              </select>
-            </div>
-            <div class="audio-custom-row split">
-              <input type="number" id="alertasVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
-              <button class="btn-play" onclick="playAlertAudio()">▶️</button>
-            </div>
-          </div>
-
-          <div class="action-grid cols-3">
-            <button class="action-card" data-audio="/play-attention">
-              <span class="action-card-icon">⚠️</span>
-              <span class="action-card-label">Atención, con permiso con favor</span>
-            </button>
-
-            <button class="action-card" onclick="quickPlay('audio/attention_with_service.wav', 'audio/attention_with_service.wav')">
-              <span class="action-card-icon">⚠️</span>
-              <span class="action-card-label">¡Con permiso por favor! Robot Mesero en servicio</span>
-            </button>
-
-            <button class="action-card" onclick="quickPlay('audio/please_return_prod.wav', 'audio/please_return_prod.wav')">
-              <span class="action-card-icon">⚠️</span>
-              <span class="action-card-label">Por favor, devuelve el producto a la bandeja</span>
-            </button>
-           
-          </div>
-        </section>
-
-        <section class="block" id="section-audios-coffee" style="display:none">
-          <div class="block-header">
-            <span class="block-icon">🔊</span>
-            <span class="block-title">Audios</span>
-
-            
-          </div>
-          <div class="action-grid cols-3">
-            <button class="action-card" data-audio="/play-question">
-              <span class="action-card-icon">❓</span>
-              <span class="action-card-label">¿Hola, deseas un café?</span>
-            </button>
-          
-            <button class="action-card" data-audio="/play-buy">
-              <span class="action-card-icon">🛒</span>
-              <span class="action-card-label">Si compras un café, te lo traigo enseguida</span>
-            </button>
-        
-
-            <button class="action-card" data-audio="/play-coffee">
-              <span class="action-card-icon">☕</span>
-              <span class="action-card-label">¡Aquí tienes tu café, que lo disfrutes!</span>
-            </button>
-          
-            <button class="action-card" onclick="quickPlay('audio/dance_to_sell.wav', 'audio/dance_to_sell.wav')">
-              <span class="action-card-icon">💃</span>
-              <span class="action-card-label">Baile</span>
-              <span class="action-card-sub">Si me compras un café, te hago un baile</span>
-            </button>
-          
-          </div>
-
-          <!-- <div class="audio-custom">
-            <div class="audio-custom-row">
-              <input type="text" id="customAsset" placeholder="Ruta del audio (ej: audio/alerta.wav)" value="audio/question_coffe_old2.wav">
-            </div>
-            <div class="audio-custom-row">
-              <input type="text" id="customDisplayText" placeholder="Texto a mostrar en pantalla (opcional)">
-            </div>
-            <div class="audio-custom-row split">
-              <input type="number" id="customVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
-              <label class="toggle-label">
-                <input type="checkbox" id="customForce"> Forzar
-              </label>
-              <button class="btn-play" onclick="playCustomAudio()">▶️</button>
-              <button class="btn-play" onclick="playCustomGreeting()" title="Mostrar carrusel y reproducir audio">🖼️</button>
-            </div>
-          </div> -->
-        </section>
-
-        <!-- kIKY -->
-        <section class="block" id ="section-audios-kiky" style="display:none">
-          <div class="block-header">
-            <span class="block-icon">🔊</span>
-            <span class="block-title">Audios Kíky</span>
-          </div>
-          <div class="action-grid cols-3">
-            <button class="action-card" onclick="quickPlay('audio/Aqui_tienes_Que_lo_d.wav', 'audio/Aqui_tienes_Que_lo_d.wav')">
-              <span class="action-card-icon">🎂</span>
-              <span class="action-card-label">Aquí tienes</span>
-              <span class="action-card-sub">¡Que lo disfrutes!</span>
-            </button>
-            <button class="action-card" onclick="greetWithAudio('audio/Hola_deseas_un_Brown.wav', 'audio/Hola_deseas_un_Brown.wav')">
-              <span class="action-card-icon">🍫</span>
-              <span class="action-card-label">¿Brownie?</span>
-              <span class="action-card-sub">Hola, ¿deseas un Brownie?</span>
-            </button>
-            <button class="action-card" onclick="quickPlay('audio/Hola_deseas_un_Cremo.wav', 'audio/Hola_deseas_un_Cremo.wav')">
-              <span class="action-card-icon">🍰</span>
-              <span class="action-card-label">¿3 Leches?</span>
-              <span class="action-card-sub">¿Un Cremoso 3 Leches?</span>
-            </button>
-            <button class="action-card" onclick="quickPlay('audio/purchase_buy_dessert_kiky.wav', 'audio/purchase_buy_dessert_kiky.wav')">
-              <span class="action-card-icon">🍰</span>
-              <span class="action-card-label">Si me compras un postre de Kiky, te lo traigo enseguida</span>
-            </button>
-            <button class="action-card" onclick="quickPlay('audio/dance_to_sell_dessert_kiky.wav', 'audio/dance_to_sell_dessert_kiky.wav')">
-              <span class="action-card-icon">💃</span>
-              <span class="action-card-label">Si me compras un postre de Kiky, te hago un baile</span>
-            </button>
-            <button class="action-card" onclick="quickPlay('audio/product_kiky.wav', 'audio/product_kiky.wav')">
-              <span class="action-card-icon">🍗</span>
-              <span class="action-card-label">Hola, ¿Deseas algún producto de Kiky?</span>
-            </button>
-
-            <button class="action-card" onclick="quickPlay('audio/buy_gaseosa.wav', 'audio/buy_gaseosa.wav')">
-              <span class="action-card-icon">🥤</span>
-              <span class="action-card-label">Hola, ¿que tal?, ¿Deseas una gaseosa?</span>
-            </button>
-            <button class="action-card" onclick="quickPlay('audio/product-pollo-kiky.wav', 'audio/product-pollo-kiky.wav')">
-              <span class="action-card-icon">🍗</span>
-              <span class="action-card-label">¡Hola! ¿Se les antoja un sabroso pollo de Pollos Kiky para hoy?</span>
-            </button>
-            <!-- <button class="action-card" onclick="quickPlay('audio/Muchas_graacias.wav', 'audio/Muchas graacias.wav')">
-              <span class="action-card-icon">🙏</span>
-              <span class="action-card-label">Gracias</span>
-              <span class="action-card-sub">Muchas gracias</span>
-            </button> -->
-          </div>
-
-          <!-- <div class="block-header" style="margin-top:12px">
-            <span class="block-icon">🎛️</span>
-            <span class="block-title">Audio personalizado</span>
-          </div> -->
-          <!-- <div class="audio-custom">
-            <div class="audio-custom-row">
-              <input type="text" id="customAsset" placeholder="Ruta del audio (ej: audio/alerta.wav)" value="audio/question_coffe_old2.wav">
-            </div>
-            <div class="audio-custom-row split">
-              <input type="number" id="customVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
-              <label class="toggle-label">
-                <input type="checkbox" id="customForce"> Forzar
-              </label>
-              <button class="btn-play" onclick="playCustomAudio()">▶️</button>
-              <button class="btn-play danger" onclick="stopLocal(); callEndpoint('POST','/audio/stop')" style="background:#f85149">⏹</button>
-            </div>
-          </div> -->
-        </section>
-
-        <section class="block" id ="section-audios-nexus-store" style="display:none">
-            <div class="block-header">
-              <span class="block-icon">🔊</span>
-              <span class="block-title">Audios Nexus Store</span>
-          </div>
-          <div class="action-grid cols-3">
-            <button class="action-card" onclick="greetWithAudio('audio/buy_gaseosa.wav', 'audio/buy_gaseosa.wav')">
-              <span class="action-card-icon">🥤</span>
-              <span class="action-card-label">Hola, ¿que tal?, ¿Deseas una gaseosa?</span>
-            </button>
-            <button class="action-card" onclick="greetWithAudio('audio/buy_gaseosa_coca_cola.wav', 'audio/buy_gaseosa_coca_cola.wav')">
-              <span class="action-card-icon">🥤</span>
-              <span class="action-card-label">Hola, ¿que tal?, ¿Deseas una gaseosa de Coca Cola?</span>
-            </button>
-            <button class="action-card" onclick="greetWithAudio('audio/buy_gaseosa_sprite.wav', 'audio/buy_gaseosa_sprite.wav')">
-              <span class="action-card-icon">🥤</span>
-              <span class="action-card-label">Hola, ¿que tal?, ¿Deseas una gaseosa de Sprite?</span>
-            </button>
-          </div>
-        </section>
-
-         <section class="audio-custom" id ="section-audios-nexus">
-            <div class="block-header">
-              <span class="block-icon">🔊</span>
-              <span class="block-title">Audios Nexus Patio Tech</span>
-          </div>
-          <div style="flex-direction: row;">
-                <div class="audio-custom-row">
-                <select id="nexusDropdown" class="alertas-select">
-                  <option value="">-- Seleccionar sonido --</option>
-                  <option value="audio/imaginate_tecno_nexus.wav">Te imaginas esta tecnología en tu negocio, Nexus Patio Tech lo hace posible</option>
-                  <option value="audio/innovation_move_with_you.wav">Innovación que se mueve contigo, Nexus Patio Tech</option>
-                  <option value="audio/nexus_great_experiencie.wav">Nexus Patio Tech, tecnología al servicio de una gran experiencia</option>
-                  <!-- <option value="audio/attention_excuse_me.wav">⚠️ Atención, con permiso</option>
-                  <option value="audio/attention_with_service.wav">🤖 Robot en servicio</option>
-                  <option value="audio/please_return_prod.wav">↩️ Devolver producto</option>
-                  <option value="audio/help_chairs.wav">🪑 Ayuda con sillas</option>
-                  <option value="audio/presentation.wav">📢 Presentación</option> -->
-                </select>
-                <div class="audio-custom-row split">
-                  <input type="hidden" id="alertasVolume" placeholder="Vol" min="0" max="1" step="0.1" value="1.0">
-                  <button class="btn-play" onclick="playAlertAudio('nexus')">▶️</button>
-                </div>
-            </div>
-          </div>
-        </section>
 
         <!-- ─── Configuración ─── -->
         <!-- <section class="block">
@@ -597,7 +218,7 @@
   </div>
 
   <!-- Cliente de robotics-backend (config y client primero: los demás dependen de ellos) -->
-  <script src="api/config.js?v=1"></script>
+  <script src="api/config.js?v=2"></script>
   <script src="api/client.js?v=1"></script>
   <script src="api/robots.js?v=1"></script>
   <script src="api/panel.js?v=1"></script>
@@ -605,6 +226,8 @@
   <script src="api/product-filter.js?v=1"></script>
   <script src="api/sales.js?v=1"></script>
   <script src="api/tts.js?v=1"></script>
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
+  <!-- Robots, botones y emociones generados desde el backend -->
+  <script src="panel-layout.js?v=1"></script>
 </body>
 </html>
