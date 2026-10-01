@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d1117">
   <title>Medios del Robot</title>
   <link rel="stylesheet" href="style.css?v=16">
-  <link rel="stylesheet" href="media.css?v=1">
+  <link rel="stylesheet" href="media.css?v=5">
 </head>
 <body>
   <div class="app media-app">
@@ -39,38 +39,40 @@
           <span>Archivo (wav, mp3, ogg, m4a, aac · máx. 20 MB)</span>
           <input type="file" name="file" accept=".wav,.mp3,.ogg,.m4a,.aac,audio/*" required>
         </label>
-        <div class="media-row">
-          <label class="media-field">
-            <span>Código</span>
-            <input type="text" name="code" placeholder="promo_cafe" pattern="[a-z0-9_\-]+" maxlength="60" required>
-          </label>
-          <label class="media-field">
-            <span>Categoría</span>
-            <select name="category" id="audioCategory" required></select>
-          </label>
-        </div>
         <label class="media-field">
-          <span>Texto que muestra el robot</span>
-          <input type="text" name="display_text" placeholder="¡Prueba nuestro café!">
+          <span>¿Dónde aparece en el panel?</span>
+          <select name="section" id="audioSection" required>
+            <option value="greetings">👋 Saludos</option>
+            <option value="alerts">⚠️ Alertas</option>
+            <option value="sirens">🚨 Sonidos (desplegable Sirenas/sonidos)</option>
+          </select>
         </label>
         <div class="media-row">
           <label class="media-field">
-            <span>Volumen por defecto</span>
-            <input type="number" name="default_volume" min="0" max="1" step="0.05" value="1">
+            <span id="buttonLabelTitle">Nombre del botón</span>
+            <input type="text" name="button_label" placeholder="¿Hola, qué tal?" maxlength="160" required>
           </label>
-          <label class="toggle-label media-check">
-            <input type="checkbox" name="show_overlay" checked> Mostrar texto en el robot
+          <label class="media-field media-short-field">
+            <span>Ícono</span>
+            <input type="text" name="button_icon" placeholder="🎵" maxlength="10">
           </label>
         </div>
+        <label class="media-field">
+          <span>Texto en la pantalla del robot <em class="media-optional">(opcional)</em></span>
+          <input type="text" name="display_text" placeholder="Déjalo vacío si solo debe sonar">
+          <small class="media-help">
+            ✍️ <strong>Escríbelo</strong> si el robot debe mostrar un mensaje mientras suena (por ejemplo, un saludo o un aviso).<br>
+            🔇 <strong>Déjalo vacío</strong> si solo debe sonar, sin mostrar nada en pantalla (por ejemplo, música o sirenas).
+          </small>
+        </label>
+        <label class="media-field media-narrow">
+          <span>Volumen por defecto</span>
+          <input type="number" name="default_volume" min="0" max="1" step="0.05" value="1">
+        </label>
         <button class="btn-accent" type="submit">Subir audio</button>
         <p class="hint-text media-form-status" aria-live="polite"></p>
+        <div class="media-result" id="audioResult"></div>
       </form>
-
-      <div class="media-toolbar">
-        <input type="search" id="audioSearch" placeholder="Buscar por código o texto...">
-        <select id="audioFilter"></select>
-      </div>
-      <div class="media-list" id="audioList"><p class="hint-text">Cargando audios...</p></div>
     </section>
 
     <!-- ═══ EMOCIONES ═══ -->
@@ -86,39 +88,28 @@
         </label>
         <div class="media-row">
           <label class="media-field">
-            <span>Código</span>
-            <input type="text" name="code" placeholder="wink" pattern="[a-z0-9_\-]+" maxlength="30" required>
+            <span>Nombre del botón</span>
+            <input type="text" name="label" placeholder="Guiño" maxlength="40" required>
           </label>
-          <label class="media-field">
+          <label class="media-field media-short-field">
             <span>Ícono</span>
             <input type="text" name="icon" placeholder="😉" maxlength="10">
           </label>
         </div>
-        <div class="media-row">
-          <label class="media-field">
-            <span>Nombre</span>
-            <input type="text" name="label" placeholder="Guiño" maxlength="40" required>
-          </label>
-          <label class="media-field">
-            <span>Descripción</span>
-            <input type="text" name="sub_label" placeholder="Cara divertida" maxlength="60">
-          </label>
-        </div>
-        <label class="media-field media-narrow">
-          <span>Orden</span>
-          <input type="number" name="sort_order" value="0" step="1">
+        <label class="media-field">
+          <span>Descripción <em class="media-optional">(opcional, se ve debajo del nombre)</em></span>
+          <input type="text" name="sub_label" placeholder="Cara divertida" maxlength="60">
         </label>
         <button class="btn-accent" type="submit">Subir emoción</button>
         <p class="hint-text media-form-status" aria-live="polite"></p>
+        <div class="media-result" id="emotionResult"></div>
       </form>
-
-      <div class="media-list media-grid" id="emotionList"><p class="hint-text">Cargando emociones...</p></div>
     </section>
   </div>
 
   <script src="api/config.js?v=2"></script>
   <script src="api/client.js?v=2"></script>
   <script src="api/catalog.js?v=2"></script>
-  <script src="media.js?v=1"></script>
+  <script src="media.js?v=5"></script>
 </body>
 </html>
