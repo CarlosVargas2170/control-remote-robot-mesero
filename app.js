@@ -96,20 +96,25 @@ async function checkTtsService() {
 
 let _currentLocalAudio = null;
 
-/** Reproduce un archivo de audio local (dentro de remote-control/audio/). */
-function playLocal(filePath) {
+/**
+ * Reproduce un audio en el panel: un archivo de audio/ o una URL de Cloudinary.
+ * @param {string} filePath
+ * @param {string|null} label - Texto del badge; si falta, se deduce del archivo.
+ */
+function playLocal(filePath, label = null) {
   stopLocal();
   const audio = new Audio(filePath);
 
   // Mostrar badge visual
-  showAudioBadge(filePath);
+  showAudioBadge(filePath, label);
 
   // Ocultar badge cuando el audio termine naturalmente
   audio.addEventListener('ended', hideAudioBadge);
   audio.addEventListener('error', hideAudioBadge);
 
   audio.play().catch(e => {
-    log(`Audio local: ${e.message}`, 'warn');
+    // AbortError = stopLocal() lo cortó antes de empezar (robot falló o en cooldown): ya se avisó.
+    if (e.name !== 'AbortError') log(`Audio local: ${e.message}`, 'warn');
     hideAudioBadge();
   });
   _currentLocalAudio = audio;
@@ -128,16 +133,19 @@ function stopLocal() {
 
 // ── Badge visual de audio ──
 
-/** Muestra el badge de "audio en reproduccion" con el nombre del archivo. */
-function showAudioBadge(filePath) {
+/**
+ * Muestra el badge de "audio en reproduccion". Usa el texto que da el botón; si no
+ * hay (audio personalizado), lo deduce del archivo: "audio/question_coffe.wav" → "¿Quieres un café?".
+ */
+function showAudioBadge(filePath, label = null) {
   const badge = document.getElementById('audioLiveBadge');
   const text = document.getElementById('audioLiveText');
   if (!badge || !text) return;
 
-  // Extraer nombre legible: "audio/question_coffe.wav" → "¿Quieres un café?"
   const fileName = filePath.includes('/') ? filePath.split('/').pop() : filePath;
-  const label = PanelLayout.labelFor(fileName) || fileName.replace(/\.(wav|mp3)$/, '').replace(/_/g, ' ');
-  text.textContent = label;
+  text.textContent = label
+    || PanelLayout.labelFor(fileName)
+    || fileName.replace(/\.(wav|mp3)$/, '').replace(/_/g, ' ');
   badge.style.display = 'flex';
 }
 
@@ -177,17 +185,11 @@ function requireSelectedMerchant() {
  * @param {string} method - GET, POST, PUT, etc.
  * @param {string} path - Ruta del endpoint (ej: '/greet').
  * @param {Object|null} body - Body de la peticion (solo POST/PUT).
- * @param {string|null} localAudioFile - Ruta local del audio a reproducir si la respuesta es OK.
+ * @param {string|null} localAudioFile - Audio que suena en el panel a la vez; se corta si el
+ *   robot falla o no lo reproduce (cooldown).
+ * @param {string|null} localAudioLabel - Texto del badge de ese audio.
  */
-/** Cambia la cara del robot. `url` solo viene en los GIFs subidos desde media.html (Cloudinary). */
-async function setEmotion(emotion, url = null) {
-  const body = { gif: emotion };
-  if (url) body.url = url;
-  await callEndpoint('POST', '/attract/set', body);
-}
-
-
-async function callEndpoint(method, path, body = null, localAudioFile = null) {
+async function callEndpoint(method, path, body = null, localAudioFile = null, localAudioLabel = null) {
   const endpointPath = String(path).split('?')[0];
   if (MERCHANT_REQUIRED_ENDPOINTS.has(endpointPath) && !requireSelectedMerchant()) {
     return { ok: false, error: 'merchant_required' };
@@ -209,7 +211,7 @@ async function callEndpoint(method, path, body = null, localAudioFile = null) {
 
   // Reproducir local ANTES del fetch para que suene sincronizado con el robot
   if (localAudioFile) {
-    playLocal(localAudioFile);
+    playLocal(localAudioFile, localAudioLabel);
   }
 
   try {
@@ -237,14 +239,23 @@ async function callEndpoint(method, path, body = null, localAudioFile = null) {
       setConnectionStatus(false);
       log(`ERR ${res.status} → ${JSON.stringify(data)}`, 'err');
       stopLocal(); // Rollback: el robot NO está reproduciendo, cortar audio local
+      if (localAudioFile) log(`⚠️ El robot rechazó el audio (ERR ${res.status}): audio local detenido.`, 'warn');
     }
     return { ok: res.ok, status: res.status, data };
   } catch (err) {
     setConnectionStatus(false);
     log(`NET ERR: ${err.message}`, 'err');
     stopLocal(); // Rollback: sin conexión, cortar audio local
+    if (localAudioFile) log('⚠️ Robot sin conexión: audio local detenido.', 'warn');
     return { ok: false, error: err.message };
   }
+}
+
+/** Cambia la cara del robot. `url` solo viene en los GIFs subidos desde media.html (Cloudinary). */
+async function setEmotion(emotion, url = null) {
+  const body = { gif: emotion };
+  if (url) body.url = url;
+  await callEndpoint('POST', '/attract/set', body);
 }
 
 async function testConnection() {
@@ -422,7 +433,7 @@ async function stopPolling() {
  *  El asset debe existir en assets/audio/ dentro de mini-app-qr.
  *  @param {string} assetPath - Ruta del asset en el robot.
  *  @param {string} localPath - Copia local usada para oír el audio en el panel.
- *  @param {Object} options - Opciones force, displayText y showOverlay.
+ *  @param {Object} options - Opciones force, displayText, showOverlay y label (texto del badge).
  */
 async function greetWithAudio(assetPath, localPath, options = {}) {
   // Validar antes de reproducir el audio local para evitar una reproduccion
@@ -445,11 +456,11 @@ async function greetWithAudio(assetPath, localPath, options = {}) {
   if (displayText) params.set('displayText', displayText);
   if (options.showOverlay === false) params.set('showOverlay', 'false');
 
-  if (localPath) playLocal(localPath);
+  if (localPath) playLocal(localPath, options.label ?? displayText);
 
   const result = await callEndpoint('POST', `/greet/audio?${params.toString()}`);
   if (!result.ok) {
-    log('⚠️ No se pudo mostrar el carrusel con el audio seleccionado.', 'warn');
+    log('⚠️ No se pudo mostrar el carrusel con el audio seleccionado: audio local detenido.', 'warn');
     return result;
   }
 

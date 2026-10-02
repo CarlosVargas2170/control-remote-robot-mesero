@@ -298,28 +298,28 @@ const PanelLayout = (() => {
   async function runButton(button, { volume } = {}) {
     const audio = button.audio;
     const source = audio ? audioSource(audio) : null;
+    // Badge del panel: el texto del robot o, si el audio solo suena, el nombre del botón.
+    const label = audio?.display_text || button.label;
     switch (button.action) {
-      case 'quick_play': {
-        playLocal(source);
-        const result = await callEndpoint('POST', '/audio/play', {
+      case 'quick_play':
+        // callEndpoint lo hace sonar en el panel y lo corta si el robot falla o está en cooldown.
+        return callEndpoint('POST', '/audio/play', {
           asset: source,
           volume: volume ?? audio.default_volume,
           force: button.force,
           displayText: audio.display_text,
           showOverlay: audio.show_overlay,
-        });
-        if (!result.ok) log('⚠️ Robot no reprodujo. Sonando solo local.', 'warn');
-        return result;
-      }
+        }, source, label);
       case 'greet_with_audio':
         return greetWithAudio(source, source, {
           force: button.force,
           displayText: audio.display_text,
           showOverlay: audio.show_overlay,
+          label,
         });
       case 'endpoint':
         if (button.endpoint === '/audio/stop') stopLocal();
-        return callEndpoint('POST', button.endpoint, null, source);
+        return callEndpoint('POST', button.endpoint, null, source, label);
       default:
         log(`Acción desconocida en el botón "${button.label}": ${button.action}`, 'err');
         return { ok: false };
