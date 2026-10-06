@@ -12,7 +12,8 @@ window.RoboticsApi = window.RoboticsApi || {};
 RoboticsApi.config = (() => {
   const LS_BACKEND_URL = 'rb_backendUrl';
   const LS_PANEL_TOKEN = 'rb_panelToken';
-  const DEFAULT_BACKEND_URL = 'http://localhost:8090';
+  // const DEFAULT_BACKEND_URL = 'http://localhost:8090';
+  const DEFAULT_BACKEND_URL = 'https://robotics-backend-5o4m.onrender.com';
   const DEFAULT_PANEL_TOKEN = 'gGHFfOda2KUbh9UOxXKqkNW1OVCHfgRqsmyUJ9lkylM';
 
   /** localStorage puede fallar (modo privado, almacenamiento bloqueado). */
