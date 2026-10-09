@@ -56,7 +56,8 @@ const AUDIO_LABELS = {
   'nexus_great_experiencie.wav':    'Nexus Patio Tech, tecnología al servicio de una gran experiencia',
   'thanks_good_bye.wav':            'Muchas gracias, hasta luego',
   'product_kiky.wav':               'Hola, ¿Deseas algún producto de Kiky?',
-  'product-pollo-kiky.wav':         '¡Hola! ¿Se les antoja un sabroso pollo de Pollos Kiky para hoy? Pueden pedir aquí mismo.'
+  'product-pollo-kiky.wav':         '¡Hola! ¿Se les antoja un sabroso pollo de Pollos Kiky para hoy? Pueden pedir aquí mismo.',
+  'want_postre.wav':                 'Hola, ¿Deseas algún postre?',
 };
 
 // ── Helpers ──
