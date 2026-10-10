@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d1117">
   <title>Medios del Robot</title>
   <link rel="stylesheet" href="style.css?v=16">
-  <link rel="stylesheet" href="media.css?v=5">
+  <link rel="stylesheet" href="media.css?v=6">
 </head>
 <body>
   <div class="app media-app">
@@ -22,21 +22,24 @@
           <span id="mediaStatusText">Backend</span>
         </div>
       </div>
-      <nav class="media-tabs" role="tablist">
+      <nav class="media-tabs" id="mediaTabs" role="tablist" hidden>
         <button type="button" class="media-tab active" data-tab="audios" role="tab">🔊 Audios</button>
         <button type="button" class="media-tab" data-tab="emotions" role="tab">😊 Emociones (GIF)</button>
       </nav>
     </header>
 
-    <!-- Token de medios: solo se envía al subir archivos -->
+    <!-- Token de medios: mientras no esté verificado solo se ve este formulario -->
     <form class="config-card media-form" id="mediaTokenForm">
       <label class="media-field">
         <span>🔑 Token de medios</span>
         <input type="password" name="mediaToken" placeholder="Token para subir audios y GIFs" autocomplete="off">
       </label>
-      <button type="submit">Guardar token</button>
+      <button type="submit">Verificar token</button>
       <p class="hint-text media-form-status" aria-live="polite"></p>
     </form>
+
+    <div id="mediaLibrary" hidden>
+    <button type="button" class="media-lock" id="mediaLock">🔒 Cambiar token</button>
 
     <!-- ═══ AUDIOS ═══ -->
     <section class="media-panel" id="tab-audios">
@@ -115,11 +118,12 @@
         <div class="media-result" id="emotionResult"></div>
       </form>
     </section>
+    </div>
   </div>
 
   <script src="api/config.js?v=3"></script>
   <script src="api/client.js?v=3"></script>
-  <script src="api/catalog.js?v=3"></script>
-  <script src="media.js?v=6"></script>
+  <script src="api/catalog.js?v=4"></script>
+  <script src="media.js?v=7"></script>
 </body>
 </html>

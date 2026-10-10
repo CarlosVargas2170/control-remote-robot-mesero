@@ -113,15 +113,57 @@ const MediaPage = (() => {
 
   // ── Token de medios ──
 
-  function bindMediaTokenForm() {
+  /** Con el token verificado se ve la biblioteca (tabs y formularios); si no, solo el campo del token. */
+  function setUnlocked(unlocked) {
+    document.getElementById('mediaTokenForm').hidden = unlocked;
+    document.getElementById('mediaLibrary').hidden = !unlocked;
+    document.getElementById('mediaTabs').hidden = !unlocked;
+  }
+
+  /** Pregunta al backend si el token guardado sirve. Devuelve true/false y deja el motivo en `status`. */
+  async function verifyMediaToken(status) {
+    if (!RoboticsApi.config.getMediaToken()) return false;
+    setStatus(status, 'Verificando token...');
+    try {
+      await RoboticsApi.catalog.media.check();
+      setStatus(status, '');
+      return true;
+    } catch (err) {
+      if (err.isMediaUnauthorized) {
+        RoboticsApi.config.setMediaToken('');
+        setStatus(status, 'Token de medios inválido.', 'err');
+      } else {
+        setStatus(status, errorText(err), 'err');
+      }
+      return false;
+    }
+  }
+
+  async function bindMediaTokenForm() {
     const form = document.getElementById('mediaTokenForm');
     const status = form.querySelector('.media-form-status');
-    form.elements.mediaToken.value = RoboticsApi.config.getMediaToken();
-    form.addEventListener('submit', event => {
+    const button = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', async event => {
       event.preventDefault();
       RoboticsApi.config.setMediaToken(form.elements.mediaToken.value);
-      setStatus(status, RoboticsApi.config.getMediaToken() ? 'Token de medios guardado.' : 'Token de medios borrado.', 'ok');
+      button.disabled = true;
+      const ok = await verifyMediaToken(status);
+      button.disabled = false;
+      if (ok) {
+        form.elements.mediaToken.value = '';
+        setUnlocked(true);
+      }
     });
+
+    document.getElementById('mediaLock').addEventListener('click', () => {
+      RoboticsApi.config.setMediaToken('');
+      setStatus(status, '');
+      setUnlocked(false);
+    });
+
+    // Token ya guardado en este navegador: se verifica solo y se entra directo.
+    if (await verifyMediaToken(status)) setUnlocked(true);
   }
 
   // ── Inicio ──

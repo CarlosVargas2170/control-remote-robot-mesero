@@ -71,6 +71,8 @@
 .media-help strong { color: var(--text); font-weight: 600; }
 .media-narrow { max-width: 160px; }
 
+[hidden] { display: none !important; }
+.media-lock { align-self: flex-start; margin: 0 0 10px; }
 .media-form-status { min-height: 1em; margin: 0; }
 .media-form-status.ok { color: var(--green); }
 

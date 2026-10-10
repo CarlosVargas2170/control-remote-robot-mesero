@@ -81,6 +81,13 @@ RoboticsApi.catalog = (() => {
       },
     },
 
+    media: {
+      /** Comprueba el token de medios (204 si es válido, 403 si no). */
+      check() {
+        return request('GET', '/api/media/check', { media: true });
+      },
+    },
+
     merchants: {
       list() {
         return request('GET', '/api/merchants');
