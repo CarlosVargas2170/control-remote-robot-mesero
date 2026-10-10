@@ -28,6 +28,16 @@
       </nav>
     </header>
 
+    <!-- Token de medios: solo se envía al subir archivos -->
+    <form class="config-card media-form" id="mediaTokenForm">
+      <label class="media-field">
+        <span>🔑 Token de medios</span>
+        <input type="password" name="mediaToken" placeholder="Token para subir audios y GIFs" autocomplete="off">
+      </label>
+      <button type="submit">Guardar token</button>
+      <p class="hint-text media-form-status" aria-live="polite"></p>
+    </form>
+
     <!-- ═══ AUDIOS ═══ -->
     <section class="media-panel" id="tab-audios">
       <form class="config-card media-form" id="audioForm">
@@ -107,9 +117,9 @@
     </section>
   </div>
 
-  <script src="api/config.js?v=2"></script>
-  <script src="api/client.js?v=2"></script>
-  <script src="api/catalog.js?v=2"></script>
-  <script src="media.js?v=5"></script>
+  <script src="api/config.js?v=3"></script>
+  <script src="api/client.js?v=3"></script>
+  <script src="api/catalog.js?v=3"></script>
+  <script src="media.js?v=6"></script>
 </body>
 </html>
