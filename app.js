@@ -58,6 +58,11 @@ const AUDIO_LABELS = {
   'product_kiky.wav':               'Hola, ¿Deseas algún producto de Kiky?',
   'product-pollo-kiky.wav':         '¡Hola! ¿Se les antoja un sabroso pollo de Pollos Kiky para hoy? Pueden pedir aquí mismo.',
   'want_postre.wav':                 'Hola, ¿Deseas algún postre?',
+  'buy_hamb.wav':                     'Si me compras un producto de Truck Palu, te lo traigo enseguida.',
+  'hello_want_alitas.wav':                 'Hola, ¿Deseas unas alitas de Truck Palu?',
+  'hello_want_hamb.mp3':                 'Hola, ¿Deseas una hamburguesa?',
+  'here_alitas.wav':                 'Aquí tienes tus alitas de pollo, ¡Que las disfrutes!',
+  'here_hamb.wav':                 'Aquí tienes tu hamburguesa, ¡Que lo disfrutes!',
 };
 
 // ── Helpers ──
@@ -839,6 +844,7 @@ const _pendingProductIds = new Set();
 /** Configuracion del filtro automatico para el merchant Kiky. */
 const KIKY_MERCHANT_ID = '1';
 const MERCHANT_NEXUS_STORE = '81';
+const MERCHANT_TRUCK_PALU = '88';
 const KIKY_VISIBLE_PRODUCT_IDS = new Set(['489150', '489161']);
 
 /** Muestra los audios correspondientes al merchant seleccionado. */
@@ -846,16 +852,22 @@ function updateMerchantAudioSections() {
   const coffeeSection = document.getElementById('section-audios-coffee');
   const kikySection = document.getElementById('section-audios-kiky');
   const nexusSection = document.getElementById('section-audios-nexus-store');
+  const truckPaluSection = document.getElementById('section-audios-truck-palu');
   const hasSelectedMerchant = _selectedMerchantId !== null;
   const isKiky = String(_selectedMerchantId) === KIKY_MERCHANT_ID;
   const isNexus = String(_selectedMerchantId) === MERCHANT_NEXUS_STORE;
+  const isTruckPalu = String(_selectedMerchantId) === MERCHANT_TRUCK_PALU;
 
   if (nexusSection) {
     nexusSection.style.display = hasSelectedMerchant && isNexus ? '' : 'none';
   }
 
+  if (truckPaluSection) {
+    truckPaluSection.style.display = hasSelectedMerchant && isTruckPalu ? '' : 'none';
+  }
+
   if (coffeeSection && !isNexus) {
-    coffeeSection.style.display = hasSelectedMerchant && !isKiky ? '' : 'none';
+    coffeeSection.style.display = hasSelectedMerchant && !isKiky && !isTruckPalu ? '' : 'none';
   }
   if (kikySection) {
     kikySection.style.display = hasSelectedMerchant && isKiky ? '' : 'none';
