@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0d1117">
+  <title>Qué muestra cada mesero</title>
+  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="media.css?v=6">
+</head>
+<body>
+  <div class="app media-app">
+    <header class="header">
+      <div class="header-row">
+        <div class="header-left">
+          <a class="media-back" href="index.html" title="Volver al panel">←</a>
+          <span class="header-logo">🎛️</span>
+          <h1>Qué muestra cada mesero</h1>
+        </div>
+        <div class="conn-badge">
+          <span class="dot" id="rpDot"></span>
+          <span id="rpStatusText">Backend</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="media-panel">
+      <div class="config-card media-form">
+        <div class="rp-toolbar">
+          <label class="media-field">
+            <span>Mesero</span>
+            <select id="rpRobot"></select>
+          </label>
+          <label class="media-field">
+            <span>Copiar la configuración de</span>
+            <select id="rpCopyFrom"></select>
+          </label>
+          <button type="button" class="btn-sm accent" id="rpCopy">Copiar</button>
+        </div>
+        <p class="media-help">
+          Desmarca lo que este mesero <strong>no</strong> debe mostrar en el control remoto. Lo nuevo que se
+          agregue aparece en todos los meseros hasta que lo desmarques aquí. Ocultar un botón oculta también su audio.
+        </p>
+      </div>
+    </section>
+
+    <section class="media-panel">
+      <div class="config-card media-form">
+        <div class="block-header"><span class="block-icon">😊</span><span class="block-title">Emociones (GIF)</span></div>
+        <div id="rpEmotions"><p class="hint-text">Cargando...</p></div>
+      </div>
+    </section>
+
+    <section class="media-panel">
+      <div class="config-card media-form">
+        <div class="block-header"><span class="block-icon">🔊</span><span class="block-title">Secciones y botones</span></div>
+        <div id="rpSections"><p class="hint-text">Cargando...</p></div>
+      </div>
+    </section>
+
+    <div class="rp-actions">
+      <button type="button" class="btn-accent" id="rpSave" disabled>Guardar</button>
+      <button type="button" class="btn-sm" id="rpReset" disabled>Descartar cambios</button>
+      <span class="hint-text media-form-status" id="rpStatus" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <script src="api/config.js?v=2"></script>
+  <script src="api/client.js?v=2"></script>
+  <script src="api/robots.js?v=1"></script>
+  <script src="api/panel.js?v=2"></script>
+  <script src="robot-panel.js?v=1"></script>
+</body>
+</html>

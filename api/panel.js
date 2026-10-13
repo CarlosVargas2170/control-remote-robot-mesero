@@ -24,6 +24,22 @@ RoboticsApi.panel = (() => {
       return getCached('/api/panel', { query, cacheKey: `panel:${robotCode}:${query.merchant_id ?? '-'}` });
     },
 
+    // ── Qué muestra cada robot (pantalla robot-panel.html) ──
+
+    /** Secciones, botones y emociones con `enabled` para ese robot. */
+    getRobotConfig(robotCode) {
+      return request('GET', `/api/robots/${encodeURIComponent(robotCode)}/panel-config`);
+    },
+
+    /**
+     * Habilita u oculta elementos en un robot. Solo cambia lo enviado; `true` vuelve al valor por defecto.
+     * @param {{sections?: Object<string, boolean>, buttons?: Object<string, boolean>, emotions?: Object<string, boolean>}} changes
+     * @returns {Promise<Object>} La configuración ya actualizada.
+     */
+    saveRobotConfig(robotCode, changes) {
+      return request('PUT', `/api/robots/${encodeURIComponent(robotCode)}/panel-config`, { body: changes });
+    },
+
     // ── Administración (para una futura pantalla de configuración) ──
 
     /** Todas las secciones con todos sus botones, incluidos los inactivos. */

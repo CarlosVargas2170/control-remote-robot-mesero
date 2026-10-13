@@ -96,3 +96,26 @@
 @media (max-width: 520px) {
   .media-narrow { max-width: none; }
 }
+
+/* ── robot-panel.html: qué muestra cada mesero ── */
+.rp-toolbar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.rp-toolbar .media-field { flex: 1 1 200px; }
+.rp-group { display: flex; flex-direction: column; gap: 4px; }
+.rp-section-row,
+.rp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.rp-section-row { font-weight: 600; color: var(--text); }
+.rp-item { padding-left: 28px; color: var(--text-secondary); }
+.rp-section-row input,
+.rp-item input { width: 16px; height: 16px; accent-color: var(--accent); flex: none; }
+.rp-item.off span,
+.rp-group.off > .rp-section-row span { opacity: 0.45; text-decoration: line-through; }
+.rp-tag { font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 1px 6px; }
+.rp-actions { display: flex; gap: 10px; align-items: center; position: sticky; bottom: 0; padding: 10px 0; background: var(--bg); }
+.rp-actions .btn-accent { width: auto; padding: 8px 18px; }
