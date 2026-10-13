@@ -845,6 +845,8 @@ const _pendingProductIds = new Set();
 const KIKY_MERCHANT_ID = '1';
 const MERCHANT_NEXUS_STORE = '81';
 const MERCHANT_TRUCK_PALU = '88';
+/** El boton "Café + imagen" solo aplica a los comercios cuyo nombre coincide (Coffee, Havanna). */
+const GREET_PRODUCT_MERCHANT_NAME = /coffee|havanna/i;
 const KIKY_VISIBLE_PRODUCT_IDS = new Set(['489150', '489161']);
 
 /** Muestra los audios correspondientes al merchant seleccionado. */
@@ -853,10 +855,17 @@ function updateMerchantAudioSections() {
   const kikySection = document.getElementById('section-audios-kiky');
   const nexusSection = document.getElementById('section-audios-nexus-store');
   const truckPaluSection = document.getElementById('section-audios-truck-palu');
+  const greetProductButton = document.getElementById('btn-greet-product');
   const hasSelectedMerchant = _selectedMerchantId !== null;
   const isKiky = String(_selectedMerchantId) === KIKY_MERCHANT_ID;
   const isNexus = String(_selectedMerchantId) === MERCHANT_NEXUS_STORE;
   const isTruckPalu = String(_selectedMerchantId) === MERCHANT_TRUCK_PALU;
+
+  if (greetProductButton) {
+    const merchantName = String(getSelectedMerchant()?.merchantName ?? '');
+    greetProductButton.style.display =
+      hasSelectedMerchant && GREET_PRODUCT_MERCHANT_NAME.test(merchantName) ? '' : 'none';
+  }
 
   if (nexusSection) {
     nexusSection.style.display = hasSelectedMerchant && isNexus ? '' : 'none';
