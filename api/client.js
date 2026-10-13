@@ -1,7 +1,8 @@
 /**
  * Cliente HTTP base para robotics-backend.
  *
- * - Agrega el token del panel (cabecera X-Panel-Token) a cada petición.
+ * - Agrega el token del panel (cabecera X-Panel-Token) a cada petición y, en las
+ *   de medios (`media: true`), el token de medios (X-Media-Token).
  * - Corta las peticiones que tardan demasiado.
  * - Convierte cualquier error en un RoboticsApi.ApiError con `status` y `detail`.
  * - `getCached` guarda la última respuesta buena de una lectura y la devuelve si
@@ -28,6 +29,9 @@ window.RoboticsApi = window.RoboticsApi || {};
 
     /** El token del panel falta o no es válido. */
     get isUnauthorized() { return this.status === 401 || this.status === 403; }
+
+    /** Lo que falla es el token de medios (el backend lo dice en `detail`). */
+    get isMediaUnauthorized() { return this.isUnauthorized && /media token/i.test(String(this.detail || '')); }
   }
 
   function buildUrl(path, query) {
@@ -56,14 +60,17 @@ window.RoboticsApi = window.RoboticsApi || {};
    * @param {Object} [options.query] - Parámetros de la URL; se omiten los vacíos.
    * @param {Object} [options.body] - Se envía como JSON.
    * @param {FormData} [options.form] - Se envía como multipart (subida de archivos).
+   * @param {boolean} [options.media] - Agrega X-Media-Token (subir, reemplazar y borrar medios).
    * @param {number} [options.timeoutMs]
    * @param {boolean} [options.raw] - Devuelve el Response sin leer (para streams de audio).
    * @returns {Promise<any>} JSON de la respuesta, null si es 204, o el Response si raw.
    */
-  async function request(method, path, { query, body, form, timeoutMs = DEFAULT_TIMEOUT_MS, raw = false } = {}) {
+  async function request(method, path, { query, body, form, media = false, timeoutMs = DEFAULT_TIMEOUT_MS, raw = false } = {}) {
     const headers = { 'Accept': raw ? '*/*' : 'application/json' };
     const token = RoboticsApi.config.getPanelToken();
     if (token) headers['X-Panel-Token'] = token;
+    const mediaToken = media ? RoboticsApi.config.getMediaToken() : '';
+    if (mediaToken) headers['X-Media-Token'] = mediaToken;
     // Con FormData el navegador pone el Content-Type multipart con su boundary.
     if (body !== undefined) headers['Content-Type'] = 'application/json';
 

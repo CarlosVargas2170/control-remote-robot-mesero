@@ -13,6 +13,7 @@ const MediaPage = (() => {
   }
 
   function errorText(err) {
+    if (err && err.isMediaUnauthorized) return 'Token de medios inválido: revísalo arriba.';
     if (err && err.isUnauthorized) return 'Token del panel inválido: revísalo en el panel (Backend ⚙️).';
     if (err && err.status === 413) return 'El archivo es demasiado grande.';
     return err && err.message ? err.message : String(err);
@@ -63,6 +64,10 @@ const MediaPage = (() => {
       event.preventDefault();
       const file = form.elements.file.files[0];
       if (!file) return;
+      if (!RoboticsApi.config.getMediaToken()) {
+        setStatus(status, 'Escribe y guarda el token de medios antes de subir.', 'err');
+        return;
+      }
 
       button.disabled = true;
       result.replaceChildren();
@@ -106,6 +111,19 @@ const MediaPage = (() => {
     return RoboticsApi.catalog.emotions.upload(file, { ...fields, code: codeFrom(fields.label, 30, 'gif') });
   }
 
+  // ── Token de medios ──
+
+  function bindMediaTokenForm() {
+    const form = document.getElementById('mediaTokenForm');
+    const status = form.querySelector('.media-form-status');
+    form.elements.mediaToken.value = RoboticsApi.config.getMediaToken();
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      RoboticsApi.config.setMediaToken(form.elements.mediaToken.value);
+      setStatus(status, RoboticsApi.config.getMediaToken() ? 'Token de medios guardado.' : 'Token de medios borrado.', 'ok');
+    });
+  }
+
   // ── Inicio ──
 
   function showTab(name) {
@@ -133,6 +151,8 @@ const MediaPage = (() => {
     let saved = null;
     try { saved = localStorage.getItem('rb_mediaTab'); } catch { /* sin almacenamiento */ }
     showTab(saved === 'emotions' ? 'emotions' : 'audios');
+
+    bindMediaTokenForm();
 
     const audioForm = document.getElementById('audioForm');
     audioForm.elements.section.addEventListener('change', syncFormWithSection);

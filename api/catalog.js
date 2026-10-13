@@ -39,18 +39,18 @@ RoboticsApi.catalog = (() => {
        * @param {{code, category, display_text?, default_volume?, show_overlay?, active?}} fields
        */
       upload(file, fields) {
-        return request('POST', '/api/audios/upload', { form: toForm(file, fields), timeoutMs: UPLOAD_TIMEOUT_MS });
+        return request('POST', '/api/audios/upload', { media: true, form: toForm(file, fields), timeoutMs: UPLOAD_TIMEOUT_MS });
       },
       /** Reemplaza el archivo de un audio existente (también los incluidos en la app). */
       replaceFile(audioId, file) {
-        return request('PUT', `/api/audios/${id(audioId)}/file`, { form: toForm(file), timeoutMs: UPLOAD_TIMEOUT_MS });
+        return request('PUT', `/api/audios/${id(audioId)}/file`, { media: true, form: toForm(file), timeoutMs: UPLOAD_TIMEOUT_MS });
       },
       update(audioId, changes) {
         return request('PATCH', `/api/audios/${id(audioId)}`, { body: changes });
       },
       /** Falla con 409 si algún botón usa el audio: en ese caso, mejor desactivarlo ({active: false}). */
       remove(audioId) {
-        return request('DELETE', `/api/audios/${id(audioId)}`);
+        return request('DELETE', `/api/audios/${id(audioId)}`, { media: true });
       },
     },
 
@@ -68,16 +68,16 @@ RoboticsApi.catalog = (() => {
        * @param {{code, label, sub_label?, icon?, sort_order?, active?}} fields
        */
       upload(file, fields) {
-        return request('POST', '/api/emotions/upload', { form: toForm(file, fields), timeoutMs: UPLOAD_TIMEOUT_MS });
+        return request('POST', '/api/emotions/upload', { media: true, form: toForm(file, fields), timeoutMs: UPLOAD_TIMEOUT_MS });
       },
       replaceFile(emotionId, file) {
-        return request('PUT', `/api/emotions/${id(emotionId)}/file`, { form: toForm(file), timeoutMs: UPLOAD_TIMEOUT_MS });
+        return request('PUT', `/api/emotions/${id(emotionId)}/file`, { media: true, form: toForm(file), timeoutMs: UPLOAD_TIMEOUT_MS });
       },
       update(emotionId, changes) {
         return request('PATCH', `/api/emotions/${id(emotionId)}`, { body: changes });
       },
       remove(emotionId) {
-        return request('DELETE', `/api/emotions/${id(emotionId)}`);
+        return request('DELETE', `/api/emotions/${id(emotionId)}`, { media: true });
       },
     },
 
