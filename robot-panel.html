@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#0d1117">
   <title>Qué muestra cada mesero</title>
   <link rel="stylesheet" href="style.css?v=16">
-  <link rel="stylesheet" href="media.css?v=6">
+  <link rel="stylesheet" href="media.css?v=8">
 </head>
 <body>
-  <div class="app media-app">
+  <div class="app media-app rp-app">
     <header class="header">
       <div class="header-row">
         <div class="header-left">
@@ -24,43 +24,43 @@
       </div>
     </header>
 
-    <section class="media-panel">
-      <div class="config-card media-form">
-        <div class="rp-toolbar">
-          <label class="media-field">
-            <span>Mesero</span>
-            <select id="rpRobot"></select>
-          </label>
-          <label class="media-field">
-            <span>Copiar la configuración de</span>
-            <select id="rpCopyFrom"></select>
-          </label>
-          <button type="button" class="btn-sm accent" id="rpCopy">Copiar</button>
-        </div>
-        <p class="media-help">
-          Desmarca lo que este mesero <strong>no</strong> debe mostrar en el control remoto. Lo nuevo que se
-          agregue aparece en todos los meseros hasta que lo desmarques aquí. Ocultar un botón oculta también su audio.
-        </p>
+    <!-- Selector y buscador: fijos arriba, no se desplazan -->
+    <div class="rp-top">
+      <div class="rp-toolbar">
+        <label class="media-field">
+          <span>Mesero</span>
+          <select id="rpRobot"></select>
+        </label>
+        <label class="media-field">
+          <span>Copiar la configuración de</span>
+          <select id="rpCopyFrom"></select>
+        </label>
+        <button type="button" class="btn-sm accent" id="rpCopy">Copiar</button>
       </div>
-    </section>
+      <div class="rp-toolbar">
+        <label class="media-field">
+          <span>Buscar botón o sección</span>
+          <input type="search" id="rpSearch" placeholder="Ej: café, saludo, brownie..." autocomplete="off">
+        </label>
+        <div class="rp-summary" id="rpSummary" aria-live="polite"></div>
+      </div>
+    </div>
 
-    <section class="media-panel">
-      <div class="config-card media-form">
-        <div class="block-header"><span class="block-icon">😊</span><span class="block-title">Emociones (GIF)</span></div>
-        <div id="rpEmotions"><p class="hint-text">Cargando...</p></div>
+    <!-- Lista: es lo único que se desplaza -->
+    <main class="rp-body" id="rpBody">
+      <p class="media-help">
+        Desmarca lo que este mesero <strong>no</strong> debe mostrar. Lo nuevo aparece en todos los meseros hasta
+        que lo desmarques. Ocultar un botón oculta también su audio.
+      </p>
+      <div id="rpEmotionsCard">
+        <p class="hint-text">Cargando...</p>
       </div>
-    </section>
-
-    <section class="media-panel">
-      <div class="config-card media-form">
-        <div class="block-header"><span class="block-icon">🔊</span><span class="block-title">Secciones y botones</span></div>
-        <div id="rpSections"><p class="hint-text">Cargando...</p></div>
-      </div>
-    </section>
+      <div id="rpSections"></div>
+    </main>
 
     <div class="rp-actions">
       <button type="button" class="btn-accent" id="rpSave" disabled>Guardar</button>
-      <button type="button" class="btn-sm" id="rpReset" disabled>Descartar cambios</button>
+      <button type="button" class="btn-sm" id="rpReset" disabled>Descartar</button>
       <span class="hint-text media-form-status" id="rpStatus" aria-live="polite"></span>
     </div>
   </div>
@@ -69,6 +69,6 @@
   <script src="api/client.js?v=3"></script>
   <script src="api/robots.js?v=1"></script>
   <script src="api/panel.js?v=2"></script>
-  <script src="robot-panel.js?v=1"></script>
+  <script src="robot-panel.js?v=3"></script>
 </body>
 </html>
