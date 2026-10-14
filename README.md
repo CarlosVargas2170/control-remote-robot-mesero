@@ -6,6 +6,14 @@ La aplicación permite seleccionar un robot, enviar comandos de pantalla y audio
 
 ## Características
 
+- **Comercios y meseros** (`merchants.html`): registro por ID externo, edición de
+  nombre y logo, pausa global y asignaciones por mesero. Reutiliza la URL y el
+  token del panel configurados en Backend. Requiere desplegar los endpoints
+  `GET /api/robots/{code}/merchant-assignments` y `PATCH /api/merchants/{id}` de
+  robotics-backend. Desmarcar conserva la asignación deshabilitada. Guardar no
+  recarga automáticamente al robot ni interrumpe pagos; se aplica al recargar
+  su catálogo. Las asignaciones no guardadas pueden descartarse.
+
 - **Selector de robot**: Mesero 1, Mesero 2, Mesero 3, Mesero 4 y Local.
 - **Conexión persistente**: la selección del robot se guarda en `localStorage`.
 - **Indicador de conexión**: muestra si el robot está `Online` u `Offline`.

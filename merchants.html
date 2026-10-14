@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0d1117">
+  <title>Comercios y meseros</title>
+  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="media.css?v=8">
+  <link rel="stylesheet" href="merchants.css?v=1">
+</head>
+<body>
+<div class="app media-app merchant-app">
+  <header class="header">
+    <div class="header-row"><div class="header-left"><a class="media-back" href="index.html" aria-label="Volver al control">←</a><span class="header-logo">🏪</span><h1>Comercios y meseros</h1></div><span class="conn-badge" id="connection">Backend</span></div>
+    <nav class="media-tabs" role="tablist" aria-label="Administración de comercios">
+      <button class="media-tab active" id="catalogTab" role="tab" aria-controls="catalogPanel" aria-selected="true" type="button">Comercios</button>
+      <button class="media-tab" id="assignmentTab" role="tab" aria-controls="assignmentPanel" aria-selected="false" type="button">Asignar a meseros</button>
+    </nav>
+  </header>
+  <main class="merchant-body">
+    <p id="pageStatus" role="status" class="hint-text"></p>
+    <button type="button" class="btn-sm" id="retry">Actualizar datos</button>
+    <section id="catalogPanel" role="tabpanel" aria-labelledby="catalogTab">
+      <div class="merchant-grid">
+        <section class="config-card"><div class="block-header"><span class="block-title">Comercios registrados</span></div><div id="catalogList"></div></section>
+        <form class="config-card media-form" id="merchantForm">
+          <div class="block-header"><span class="block-title" id="formTitle">Registrar comercio</span></div>
+          <label class="media-field"><span>ID del comercio</span><input type="number" name="merchant_id" min="1" step="1" required></label>
+          <label class="media-field"><span>Nombre</span><input name="name" maxlength="120" required></label>
+          <label class="media-field"><span>URL del logo (opcional)</span><input type="url" name="logo_url" placeholder="https://…"></label>
+          <p class="media-help">Usá el mismo ID de api-totem. Los productos continúan llegando de su catálogo.</p>
+          <button class="btn-accent" type="submit">Guardar comercio</button><button type="button" class="btn-sm" id="newMerchant">Nuevo comercio</button>
+          <p id="formStatus" role="status" class="hint-text"></p>
+        </form>
+      </div>
+    </section>
+    <section id="assignmentPanel" role="tabpanel" aria-labelledby="assignmentTab" hidden>
+      <label class="media-field merchant-picker-field"><span>Mesero</span><select id="robotSelect" disabled></select></label>
+      <div class="merchant-grid">
+        <section class="config-card"><div class="block-header"><span class="block-title">Comercios disponibles para este mesero</span></div><div id="assignmentList"></div><p class="media-help">Desmarcar deshabilita el comercio solo en este mesero. Podés volver a habilitarlo después.</p></section>
+        <section class="config-card"><div class="block-header"><span class="block-title" id="summaryTitle">Resumen</span></div><div id="assignmentSummary"></div><p class="merchant-notice">Guardar actualiza el backend. Los meseros toman el cambio cuando recargan su catálogo.</p></section>
+      </div>
+      <div class="merchant-actions"><button class="btn-accent" id="saveAssignments" disabled type="button">Guardar asignaciones</button><button class="btn-sm" id="discardAssignments" disabled type="button">Descartar</button><span class="hint-text" role="status" id="assignmentStatus"></span></div>
+    </section>
+  </main>
+</div>
+<script src="api/config.js?v=3"></script><script src="api/client.js?v=3"></script><script src="api/catalog.js?v=1"></script><script src="merchants.js?v=2"></script>
+</body>
+</html>

@@ -1151,6 +1151,8 @@ html, body {
 /* ═══ BACKEND (robotics-backend) ═══ */
 .header-badges {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 6px;
 }
