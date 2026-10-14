@@ -33,11 +33,12 @@ RoboticsApi.panel = (() => {
 
     /**
      * Habilita u oculta elementos en un robot. Solo cambia lo enviado; `true` vuelve al valor por defecto.
+     * Pide el token de medios (X-Media-Token).
      * @param {{sections?: Object<string, boolean>, buttons?: Object<string, boolean>, emotions?: Object<string, boolean>}} changes
      * @returns {Promise<Object>} La configuración ya actualizada.
      */
     saveRobotConfig(robotCode, changes) {
-      return request('PUT', `/api/robots/${encodeURIComponent(robotCode)}/panel-config`, { body: changes });
+      return request('PUT', `/api/robots/${encodeURIComponent(robotCode)}/panel-config`, { body: changes, media: true });
     },
 
     // ── Administración (para una futura pantalla de configuración) ──

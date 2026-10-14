@@ -6,7 +6,7 @@
   let merchants = [], robots = [], saved = [], draft = [], currentRobot = '', editing = null;
   let busy = false, loaded = false;
   const dirty = () => JSON.stringify(saved) !== JSON.stringify(draft);
-  const message = error => error.isUnauthorized
+  const message = error => (window.AdminGate && AdminGate.rejected(error)) ? 'El token de acceso ya no es válido.' : error.isUnauthorized
     ? 'Token del panel inválido. Configuralo en Backend desde el control principal.'
     : error.status === 404 ? 'Actualizá robotics-backend para habilitar la administración de asignaciones.' : error.message;
   function text(id, value, error = false) {
@@ -55,7 +55,7 @@
         if (merchant.active && !confirm(`¿Pausar ${merchant.name} en todos los meseros? Se aplicará cuando recarguen.`)) return;
         lock(true);
         try {
-          const updated = await request('PATCH', `/api/merchants/${merchant.merchant_id}`, { body: { active: !merchant.active } });
+          const updated = await request('PATCH', `/api/merchants/${merchant.merchant_id}`, { body: { active: !merchant.active }, media: true });
           merchants = merchants.map(m => m.id === updated.id ? updated : m);
           renderCatalog(); renderAssignments();
           text('pageStatus', 'Estado global guardado. Pendiente de recarga en los meseros.');
@@ -120,7 +120,7 @@
     lock(true);
     try {
       const body = { name, logo_url: form.elements.logo_url.value.trim() || null };
-      const updated = await request(editing === null ? 'PUT' : 'PATCH', `/api/merchants/${id}`, { body });
+      const updated = await request(editing === null ? 'PUT' : 'PATCH', `/api/merchants/${id}`, { body, media: true });
       merchants = [...merchants.filter(m => m.merchant_id !== id), updated].sort((a, b) => a.merchant_id - b.merchant_id);
       resetForm(); renderCatalog(); renderAssignments(); text('formStatus', 'Comercio guardado. Podés asignarlo desde la otra pestaña.');
     } catch (error) { text('formStatus', message(error), true); }
@@ -134,7 +134,7 @@
     if (busy || !loaded || !dirty()) return;
     lock(true);
     try {
-      await request('PUT', `${path(currentRobot)}/merchants`, { body: { merchants: draft } });
+      await request('PUT', `${path(currentRobot)}/merchants`, { body: { merchants: draft }, media: true });
       saved = structuredClone(draft); text('assignmentStatus', 'Guardado. Pendiente de recarga en el mesero.');
     } catch (error) { text('assignmentStatus', message(error), true); }
     finally { lock(false); }

@@ -26,6 +26,7 @@ const RobotPanelPage = (() => {
   let query = '';
 
   function errorText(err) {
+    if (window.AdminGate && AdminGate.rejected(err)) return 'El token de acceso ya no es válido.';
     if (err && err.isUnauthorized) return 'Token del panel inválido: revísalo en el panel (Backend ⚙️).';
     return err && err.message ? err.message : String(err);
   }
