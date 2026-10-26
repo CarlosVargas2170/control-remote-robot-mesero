@@ -18,7 +18,8 @@ RoboticsApi.config = (() => {
   const LS_PANEL_TOKEN = 'rb_panelToken';
   const LS_MEDIA_TOKEN = 'rb_mediaToken';
   // const DEFAULT_BACKEND_URL = 'http://localhost:8090';
-  const DEFAULT_BACKEND_URL = 'https://robotics-backend-5o4m.onrender.com';
+  // const DEFAULT_BACKEND_URL = 'https://robotics-backend-5o4m.onrender.com';
+  const DEFAULT_BACKEND_URL = 'https://backend.dinner.nexarobotics.org/';
   const DEFAULT_PANEL_TOKEN = 'gGHFfOda2KUbh9UOxXKqkNW1OVCHfgRqsmyUJ9lkylM';
 
   /** localStorage puede fallar (modo privado, almacenamiento bloqueado). */
