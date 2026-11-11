@@ -1147,6 +1147,37 @@ async function toggleMerchant(merchantId, select) {
   if (currentSelect) currentSelect.disabled = false;
 }
 
+/**
+ * Muestra "Elige restaurante" en el robot (POST /merchants/show).
+ * El robot habilita todos los comercios, asi que el panel deja de tener
+ * uno seleccionado: para volver a uno solo, elegirlo de nuevo en el menu.
+ */
+async function showMerchantsView() {
+  if (_isToggling) {
+    log('Espera a que termine la seleccion del comercio.', 'warn');
+    return;
+  }
+  if (_pendingProductIds.size > 0) {
+    log('Guarda los filtros pendientes antes de mostrar los comercios.', 'warn');
+    return;
+  }
+
+  const result = await callEndpoint('POST', '/merchants/show');
+  if (!result.ok) {
+    if (result.status === 404) {
+      log('El robot no tiene /merchants/show: actualiza la app del robot.', 'err');
+    }
+    return;
+  }
+
+  if (result.data && result.data.merchantChoice === false) {
+    log('Solo hay un comercio con productos: el robot muestra su catalogo.', 'warn');
+  }
+
+  _selectedMerchantId = null;
+  await loadMerchantsAndProducts();
+}
+
 /** Actualiza localmente la visibilidad; Guardar filtros envia todos los cambios. */
 function toggleProduct(productId, checkbox) {
   if (_isToggling) { checkbox.checked = !checkbox.checked; return; }

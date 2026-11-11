@@ -155,6 +155,7 @@ Si el indicador muestra **TTS Offline**, los audios preparados pueden continuar 
 | `POST` | `/greet` | Muestra el producto y reproduce el saludo. |
 | `POST` | `/greet/audio?asset=audio/...` | Muestra el carrusel desde el primer producto y reproduce el asset indicado. |
 | `POST` | `/product` | Muestra únicamente el producto. |
+| `POST` | `/merchants/show` | Muestra "Elige restaurante" con todos los comercios habilitados (botón **Ver comercios**). |
 | `POST` | `/play-question` | Reproduce la pregunta de compra. |
 | `POST` | `/play-thanks` | Reproduce el agradecimiento. |
 | `POST` | `/play-buy` | Reproduce la invitación a comprar. |
